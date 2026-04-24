@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -8,6 +8,7 @@ import { useFetcher } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import { SetupGuideCard } from "../components/SetupGuideCard";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -86,8 +87,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function Index() {
   const fetcher = useFetcher<typeof action>();
-
   const shopify = useAppBridge();
+
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [embedActivated, setEmbedActivated] = useState(false);
+  const [firstReviewRequestCreated, setFirstReviewRequestCreated] = useState(false);
+  const [reviewConfirmedWorking, setReviewConfirmedWorking] = useState(false);
 
   useEffect(() => {
     if (fetcher.data?.product?.id) {
@@ -97,27 +102,22 @@ export default function Index() {
 
   return (
     <s-page heading="Edge Reviews">
-      <s-section heading="Congrats on creating a new Shopify app 🎉">
-        <s-paragraph>
-          This embedded app template uses{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/tools/app-bridge"
-            target="_blank"
-          >
-            App Bridge
-          </s-link>{" "}
-          interface examples like an{" "}
-          <s-link href="/app/additional">additional page in the app nav</s-link>
-          , as well as an{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            Admin GraphQL
-          </s-link>{" "}
-          mutation demo, to provide a starting point for app development.
-        </s-paragraph>
-      </s-section>
+      {!isDismissed && (
+        <SetupGuideCard
+          embedActivated={embedActivated}
+          firstReviewRequestCreated={firstReviewRequestCreated}
+          reviewConfirmedWorking={reviewConfirmedWorking}
+          onDismiss={() => setIsDismissed(true)}
+          onOpenThemeSettings={() =>
+            shopify.navigate("shopify://admin/themes/current/editor?context=apps", {
+              target: "new_tab",
+            })
+          }
+          onMarkEmbedDone={() => setEmbedActivated(true)}
+          onCreateFirstRequest={() => setFirstReviewRequestCreated(true)}
+          onMarkConfirmedWorking={() => setReviewConfirmedWorking(true)}
+        />
+      )}
     </s-page>
   );
 }
