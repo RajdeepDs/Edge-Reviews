@@ -95,7 +95,7 @@ export function SetupGuideCard({
               Setup guide
             </Text>
             <Text as="p" tone="subdued">
-              Follow these steps to start using the Countdown timer app
+              Follow these steps to start using the Edge Reviews app
             </Text>
           </BlockStack>
 

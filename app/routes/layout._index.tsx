@@ -53,6 +53,9 @@ export default function Index() {
 
   return (
     <s-page heading="Edge Reviews">
+      <s-button icon="import" slot="primary-action">
+        Import reviews
+      </s-button>
       <OfferBanner />
       <s-stack gap="large">
         {!setupDismissed && (
