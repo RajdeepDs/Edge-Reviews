@@ -6,6 +6,7 @@ export interface Review {
   text: string;
   product: string;
   date: string;
+  status?: "published" | "pending" | "rejected";
 }
 
 export interface FunnelStep {
@@ -82,6 +83,21 @@ export const mockReviews: Review[] = [
     product: "Scented Candle Set",
     date: "Jan 11, 2025",
   },
+];
+
+export const mockAllReviews: Review[] = [
+  { id: 1, customer: "Priya Sharma", initials: "PS", rating: 5, text: "Absolutely love this product! The quality is exceptional and delivery was super fast.", product: "Organic Face Serum", date: "Jan 15, 2025", status: "published" },
+  { id: 2, customer: "Rahul Mehta", initials: "RM", rating: 4, text: "Great product overall. Works exactly as described. Would recommend to friends and family.", product: "Wireless Earbuds Pro", date: "Jan 14, 2025", status: "published" },
+  { id: 3, customer: "Sarah Johnson", initials: "SJ", rating: 5, text: "Exceeded my expectations. The packaging was beautiful and the product is top notch.", product: "Minimalist Watch", date: "Jan 13, 2025", status: "published" },
+  { id: 4, customer: "Arjun Patel", initials: "AP", rating: 3, text: "Decent product but shipping took longer than expected. Quality is okay for the price.", product: "Leather Wallet", date: "Jan 12, 2025", status: "pending" },
+  { id: 5, customer: "Emma Wilson", initials: "EW", rating: 5, text: "Perfect gift! My friend was absolutely thrilled with it. Beautiful presentation.", product: "Scented Candle Set", date: "Jan 11, 2025", status: "published" },
+  { id: 6, customer: "Vikram Singh", initials: "VS", rating: 2, text: "Product did not match the description. Very disappointed with the quality.", product: "Leather Wallet", date: "Jan 10, 2025", status: "rejected" },
+  { id: 7, customer: "Anika Gupta", initials: "AG", rating: 4, text: "Good quality and fast delivery. Packaging could be better but overall happy.", product: "Organic Face Serum", date: "Jan 9, 2025", status: "pending" },
+  { id: 8, customer: "James Carter", initials: "JC", rating: 5, text: "Amazing! Will definitely order again. Best purchase I have made in a long time.", product: "Wireless Earbuds Pro", date: "Jan 8, 2025", status: "published" },
+  { id: 9, customer: "Neha Kapoor", initials: "NK", rating: 1, text: "Terrible experience. Product broke within a week. Not worth the money at all.", product: "Minimalist Watch", date: "Jan 7, 2025", status: "rejected" },
+  { id: 10, customer: "Tom Bradley", initials: "TB", rating: 4, text: "Very satisfied with this purchase. The product works as advertised.", product: "Scented Candle Set", date: "Jan 6, 2025", status: "pending" },
+  { id: 11, customer: "Kavya Reddy", initials: "KR", rating: 5, text: "Absolutely fantastic! Exceeded all my expectations. Will recommend to everyone.", product: "Organic Face Serum", date: "Jan 5, 2025", status: "published" },
+  { id: 12, customer: "Michael Chen", initials: "MC", rating: 3, text: "Average product. Nothing special but gets the job done.", product: "Wireless Earbuds Pro", date: "Jan 4, 2025", status: "pending" },
 ];
 
 export const mockFunnelSteps: FunnelStep[] = [
