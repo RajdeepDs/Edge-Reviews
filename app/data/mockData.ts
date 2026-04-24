@@ -1,3 +1,25 @@
+export interface Product {
+  id: number;
+  name: string;
+  initials: string;
+  status: "active" | "draft" | "archived";
+  inventory: number;
+  type: string;
+  price: string;
+  vendor: string;
+}
+
+export const mockProducts: Product[] = [
+  { id: 1, name: "Organic Face Serum", initials: "FS", status: "active", inventory: 142, type: "Skincare", price: "$29.99", vendor: "GlowLab" },
+  { id: 2, name: "Wireless Earbuds Pro", initials: "WE", status: "active", inventory: 58, type: "Electronics", price: "$89.99", vendor: "SoundTech" },
+  { id: 3, name: "Minimalist Watch", initials: "MW", status: "active", inventory: 34, type: "Accessories", price: "$149.00", vendor: "TimeCo" },
+  { id: 4, name: "Leather Wallet", initials: "LW", status: "draft", inventory: 0, type: "Accessories", price: "$49.99", vendor: "LeatherCraft" },
+  { id: 5, name: "Scented Candle Set", initials: "SC", status: "active", inventory: 87, type: "Home & Living", price: "$34.99", vendor: "AromaHouse" },
+  { id: 6, name: "Yoga Mat Premium", initials: "YM", status: "active", inventory: 23, type: "Sports", price: "$59.99", vendor: "FlexFit" },
+  { id: 7, name: "Bamboo Water Bottle", initials: "BW", status: "archived", inventory: 0, type: "Kitchen", price: "$24.99", vendor: "EcoWare" },
+  { id: 8, name: "Linen Throw Blanket", initials: "LT", status: "draft", inventory: 15, type: "Home & Living", price: "$79.99", vendor: "CozyHome" },
+];
+
 export interface Review {
   id: number;
   customer: string;
