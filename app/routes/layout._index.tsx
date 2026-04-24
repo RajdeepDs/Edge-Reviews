@@ -9,6 +9,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { SetupGuideCard } from "../components/SetupGuideCard";
+import { OfferBanner } from "app/components/offer-banner";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -100,19 +101,23 @@ export default function Index() {
     }
   }, [fetcher.data?.product?.id, shopify]);
 
+  // TODO: Fix the shop - ${shop.shopDomain}
+  const handleOpenThemeSettings = () => {
+    const themeUrl = `https://admin/themes/current/editor?context=apps`;
+    window.open(themeUrl, "_blank");
+  };
+
+
   return (
     <s-page heading="Edge Reviews">
+      <OfferBanner />
       {!isDismissed && (
         <SetupGuideCard
           embedActivated={embedActivated}
           firstReviewRequestCreated={firstReviewRequestCreated}
           reviewConfirmedWorking={reviewConfirmedWorking}
           onDismiss={() => setIsDismissed(true)}
-          onOpenThemeSettings={() =>
-            shopify.navigate("shopify://admin/themes/current/editor?context=apps", {
-              target: "new_tab",
-            })
-          }
+          onOpenThemeSettings={handleOpenThemeSettings}
           onMarkEmbedDone={() => setEmbedActivated(true)}
           onCreateFirstRequest={() => setFirstReviewRequestCreated(true)}
           onMarkConfirmedWorking={() => setReviewConfirmedWorking(true)}
