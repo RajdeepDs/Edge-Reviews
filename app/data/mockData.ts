@@ -45,6 +45,25 @@ export interface TopProduct {
   reviewCount: number;
 }
 
+export interface LastImport {
+  date: string;
+  totalRows: number;
+  succeeded: number;
+  failed: number;
+  importId: string;
+}
+
+export const mockLastImport: LastImport = {
+  date: "2026-04-23T14:32:00Z",
+  totalRows: 318,
+  succeeded: 304,
+  failed: 14,
+  importId: "imp_20260423",
+};
+
+// Set to null to preview the empty state
+// export const mockLastImport: LastImport | null = null;
+
 export interface DashboardStats {
   totalReviews: number;
   averageRating: number;

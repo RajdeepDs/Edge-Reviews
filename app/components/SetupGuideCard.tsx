@@ -19,23 +19,23 @@ import {
 
 interface SetupGuideCardProps {
   embedActivated: boolean;
-  firstReviewRequestCreated: boolean;
+  reviewsImported: boolean;
   reviewConfirmedWorking: boolean;
   onDismiss: () => void;
   onOpenThemeSettings: () => void;
   onMarkEmbedDone: () => void;
-  onCreateFirstRequest: () => void;
+  onImportReviews: () => void;
   onMarkConfirmedWorking: () => void;
 }
 
 export function SetupGuideCard({
   embedActivated,
-  firstReviewRequestCreated,
+  reviewsImported,
   reviewConfirmedWorking,
   onDismiss,
   onOpenThemeSettings,
   onMarkEmbedDone,
-  onCreateFirstRequest,
+  onImportReviews,
   onMarkConfirmedWorking,
 }: SetupGuideCardProps) {
   const steps = [
@@ -55,13 +55,13 @@ export function SetupGuideCard({
       ),
     },
     {
-      id: "request",
-      title: "Create your first review request",
-      description: "Send a review request to a customer to collect your first review.",
-      completed: firstReviewRequestCreated,
-      actions: !firstReviewRequestCreated ? (
+      id: "import",
+      title: "Import your reviews (CSV)",
+      description: "Upload a CSV file to bring in existing reviews from another platform or source.",
+      completed: reviewsImported,
+      actions: !reviewsImported ? (
         <InlineStack gap="200">
-          <Button variant="primary" onClick={onCreateFirstRequest}>Create</Button>
+          <Button variant="primary" onClick={onImportReviews}>Import reviews</Button>
         </InlineStack>
       ) : null,
     },
@@ -70,7 +70,7 @@ export function SetupGuideCard({
       title: "Confirm your reviews widget is working",
       description: "Visit your storefront and verify the reviews widget appears correctly.",
       completed: reviewConfirmedWorking,
-      actions: firstReviewRequestCreated ? (
+      actions: reviewsImported ? (
         <InlineStack gap="200">
           <Button onClick={onMarkConfirmedWorking}>Mark as done</Button>
         </InlineStack>

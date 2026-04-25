@@ -8,9 +8,11 @@ import { SetupGuideCard } from "../components/SetupGuideCard";
 import { StatsRow } from "../components/dashboard/StatsRow";
 import { QuickActions } from "../components/dashboard/QuickActions";
 import { TopRatedProducts } from "../components/dashboard/TopRatedProducts";
+import { LastImportSummary } from "../components/dashboard/LastImportSummary";
 import {
   mockStats,
   mockTopProducts,
+  mockLastImport,
 } from "../data/mockData";
 import { OfferBanner } from "app/components/offer-banner";
 
@@ -25,7 +27,7 @@ export default function Index() {
 
   const [setupDismissed, setSetupDismissed] = useState(false);
   const [embedActivated, setEmbedActivated] = useState(false);
-  const [firstReviewRequestCreated, setFirstReviewRequestCreated] = useState(false);
+  const [reviewsImported, setReviewsImported] = useState(false);
   const [reviewConfirmedWorking, setReviewConfirmedWorking] = useState(false);
 
   const handleOpenThemeSettings = () => {
@@ -57,12 +59,12 @@ export default function Index() {
         {!setupDismissed && (
           <SetupGuideCard
             embedActivated={embedActivated}
-            firstReviewRequestCreated={firstReviewRequestCreated}
+            reviewsImported={reviewsImported}
             reviewConfirmedWorking={reviewConfirmedWorking}
             onDismiss={() => setSetupDismissed(true)}
             onOpenThemeSettings={handleOpenThemeSettings}
             onMarkEmbedDone={() => setEmbedActivated(true)}
-            onCreateFirstRequest={() => setFirstReviewRequestCreated(true)}
+            onImportReviews={() => setReviewsImported(true)}
             onMarkConfirmedWorking={() => setReviewConfirmedWorking(true)}
           />
         )}
@@ -75,7 +77,10 @@ export default function Index() {
           onSendReviewRequest={handleSendReviewRequest}
         />
 
-        <TopRatedProducts products={mockTopProducts} />
+        <s-grid gridTemplateColumns="3fr 2fr" gap="base">
+          <TopRatedProducts products={mockTopProducts} />
+          <LastImportSummary lastImport={mockLastImport} onImportReviews={handleImportReviews} />
+        </s-grid>
       </s-stack>
     </s-page>
   );

@@ -2,6 +2,7 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { mockStats, mockFunnelSteps, mockTopProducts } from "../data/mockData";
+import { AnalyticsFilterBar } from "../components/dashboard/AnalyticsFilterBar";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -33,6 +34,8 @@ export default function AnalyticsPage() {
   return (
     <s-page heading="Analytics" inlineSize="base">
       <s-stack gap="large">
+
+        <AnalyticsFilterBar />
 
         {/* ── Overview stats ── */}
         <s-section heading="Overview">
@@ -90,7 +93,7 @@ export default function AnalyticsPage() {
                     <div
                       style={{
                         width: "100%",
-                        background: "#6366f1",
+                        background: "#EF9F27",
                         borderRadius: "4px 4px 0 0",
                         height: `${(count / maxMonthlyCount) * 100}px`,
                         minHeight: "4px",

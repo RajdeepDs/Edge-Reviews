@@ -1,21 +1,14 @@
 import type { TopProduct } from "../../data/mockData";
 
-function StarRating({ rating }: { rating: number }) {
+function Stars({ rating }: { rating: number }) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
   return (
-    <s-stack direction="inline" gap="small-100">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          style={{
-            color: star <= Math.round(rating) ? "#fbbf24" : "#d1d5db",
-            fontSize: "12px",
-            lineHeight: 1,
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </s-stack>
+    <span style={{ fontSize: "12px", letterSpacing: "1px", color: "#fbbf24" }}>
+      {"★".repeat(full)}
+      {half ? "½" : ""}
+      <span style={{ color: "#e1e3e5" }}>{"★".repeat(5 - full - (half ? 1 : 0))}</span>
+    </span>
   );
 }
 
@@ -26,25 +19,70 @@ interface TopRatedProductsProps {
 export function TopRatedProducts({ products }: TopRatedProductsProps) {
   return (
     <s-section heading="Top Rated Products">
-      <s-stack gap="small-400">
+      <div style={{ display: "flex", flexDirection: "column" }}>
         {products.map((product, index) => (
-          <s-stack key={product.id} gap="small-300">
-            {index > 0 && <s-divider />}
-            <s-grid gridTemplateColumns="auto auto 1fr auto" alignItems="center" gap="small-300">
-              <s-text color="subdued">{index + 1}.</s-text>
-              <span style={{ fontSize: "20px", lineHeight: 1 }}>{product.emoji}</span>
-              <s-stack gap="small-100">
-                <s-text color="base">{product.name}</s-text>
-                <StarRating rating={product.avgRating} />
-              </s-stack>
-              <s-stack gap="small-100" alignItems="end">
-                <s-text color="base">{product.avgRating.toFixed(1)}</s-text>
-                <s-text color="subdued">{product.reviewCount} reviews</s-text>
-              </s-stack>
-            </s-grid>
-          </s-stack>
+          <div key={product.id}>
+            {index > 0 && (
+              <div style={{ height: "1px", background: "#f1f1f1", margin: "0 0" }} />
+            )}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "24px 40px 1fr auto",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px 0",
+              }}
+            >
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "#8c9196", textAlign: "center" }}>
+                {index + 1}
+              </span>
+
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  background: "#f6f6f7",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "20px",
+                  flexShrink: 0,
+                }}
+              >
+                {product.emoji}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#1a1a1a",
+                    marginBottom: "3px",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {product.name}
+                </div>
+                <Stars rating={product.avgRating} />
+              </div>
+
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a", lineHeight: 1.2 }}>
+                  {product.avgRating.toFixed(1)}
+                </div>
+                <div style={{ fontSize: "12px", color: "#8c9196", marginTop: "2px" }}>
+                  {product.reviewCount} reviews
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
-      </s-stack>
+      </div>
     </s-section>
   );
 }
