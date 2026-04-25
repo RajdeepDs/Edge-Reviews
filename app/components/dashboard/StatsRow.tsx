@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import type { DashboardStats } from "../../data/mockData";
 
 interface StatsRowProps {
@@ -21,11 +22,6 @@ export function StatsRow({ stats }: StatsRowProps) {
       value: stats.requestsSent > 0 ? stats.requestsSent.toLocaleString() : "—",
       sub: "This month",
     },
-    {
-      label: "Conversion Rate",
-      value: stats.requestsSent > 0 ? `${stats.conversionRate}%` : "—",
-      sub: "Requests → Reviews",
-    },
   ];
 
   return (
@@ -39,6 +35,20 @@ export function StatsRow({ stats }: StatsRowProps) {
           </s-stack>
         </s-section>
       ))}
+      <s-section>
+        <Link
+          to="/app/reviews?status=pending"
+          style={{ textDecoration: "none", color: "inherit", display: "block" }}
+        >
+          <s-stack gap="small-200">
+            <s-text color="subdued">Pending Reviews</s-text>
+            <s-heading>
+              {stats.pendingReviews > 0 ? stats.pendingReviews.toLocaleString() : "—"}
+            </s-heading>
+            <s-text color="subdued">Awaiting moderation</s-text>
+          </s-stack>
+        </Link>
+      </s-section>
     </s-grid>
   );
 }

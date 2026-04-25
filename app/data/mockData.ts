@@ -50,6 +50,7 @@ export interface DashboardStats {
   averageRating: number;
   requestsSent: number;
   conversionRate: number;
+  pendingReviews: number;
 }
 
 export const mockStats: DashboardStats = {
@@ -57,6 +58,7 @@ export const mockStats: DashboardStats = {
   averageRating: 4.6,
   requestsSent: 89,
   conversionRate: 34,
+  pendingReviews: 12,
 };
 
 export const mockReviews: Review[] = [
