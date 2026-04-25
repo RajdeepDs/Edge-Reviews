@@ -4,9 +4,10 @@ export default [
   index("routes/_index/route.tsx"),
   route("app", "routes/layout.tsx", [
     index("routes/layout._index.tsx"),
-    route("additional", "routes/app.additional.tsx"),
+    route("analytics", "routes/app.analytics.tsx"),
     route("reviews", "routes/app.reviews.tsx"),
     route("products", "routes/app.products.tsx"),
+    route("settings", "routes/app.settings.tsx"),
   ]),
   route("auth/login", "routes/auth.login/route.tsx"),
   route("auth/*", "routes/auth.$.tsx"),

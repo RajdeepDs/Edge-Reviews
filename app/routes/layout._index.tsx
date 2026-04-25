@@ -7,13 +7,9 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { SetupGuideCard } from "../components/SetupGuideCard";
 import { StatsRow } from "../components/dashboard/StatsRow";
 import { QuickActions } from "../components/dashboard/QuickActions";
-import { RecentReviews } from "../components/dashboard/RecentReviews";
-import { RequestFunnel } from "../components/dashboard/RequestFunnel";
 import { TopRatedProducts } from "../components/dashboard/TopRatedProducts";
 import {
   mockStats,
-  mockReviews,
-  mockFunnelSteps,
   mockTopProducts,
 } from "../data/mockData";
 import { OfferBanner } from "app/components/offer-banner";
@@ -79,17 +75,7 @@ export default function Index() {
           onSendReviewRequest={handleSendReviewRequest}
         />
 
-        <s-grid gridTemplateColumns="2fr 1fr" gap="base">
-          <RecentReviews
-            reviews={mockReviews}
-            onViewAll={() => shopify.toast.show("Navigate to reviews — coming soon!")}
-            onSendFirstRequest={handleSendReviewRequest}
-          />
-          <s-stack gap="base">
-            <RequestFunnel steps={mockFunnelSteps} />
-            <TopRatedProducts products={mockTopProducts} />
-          </s-stack>
-        </s-grid>
+        <TopRatedProducts products={mockTopProducts} />
       </s-stack>
     </s-page>
   );

@@ -8,7 +8,7 @@ function StarRating({ rating }: { rating: number }) {
           key={star}
           style={{
             color: star <= rating ? "#fbbf24" : "#d1d5db",
-            fontSize: "14px",
+            fontSize: "13px",
             lineHeight: 1,
           }}
         >
@@ -33,7 +33,6 @@ export function RecentReviews({
   return (
     <s-section>
       <s-stack gap="base">
-        {/* Header */}
         <s-grid gridTemplateColumns="1fr auto" alignItems="center">
           <s-heading>Recent Reviews</s-heading>
           {reviews.length > 0 && (
@@ -44,7 +43,6 @@ export function RecentReviews({
         </s-grid>
 
         {reviews.length === 0 ? (
-          /* Empty state */
           <s-stack gap="base" alignItems="center">
             <span style={{ fontSize: "48px", lineHeight: 1 }}>⭐</span>
             <s-stack gap="small-200" alignItems="center">
@@ -59,27 +57,41 @@ export function RecentReviews({
             </s-button>
           </s-stack>
         ) : (
-          <s-stack gap="small-500">
-            {reviews.map((review, index) => (
-              <s-stack key={review.id} gap="small-300">
-                {index > 0 && <s-divider />}
-                <s-grid gridTemplateColumns="auto 1fr" gap="small-300" alignItems="start">
+          <s-stack gap="small-200">
+            {reviews.map((review) => (
+              <s-clickable
+                key={review.id}
+                border="base"
+                borderRadius="base"
+                padding="small"
+                inlineSize="100%"
+              >
+                <s-grid gridTemplateColumns="auto 1fr auto" alignItems="stretch" gap="small-300">
                   <s-avatar initials={review.initials} size="base" />
-                  <s-stack gap="small-200">
-                    <s-grid gridTemplateColumns="1fr auto" alignItems="center">
-                      <s-text color="base">{review.customer}</s-text>
-                      <s-text color="subdued">{review.date}</s-text>
-                    </s-grid>
-                    <s-text color="subdued">{review.product}</s-text>
-                    <StarRating rating={review.rating} />
-                    <s-paragraph color="base">
-                      {review.text.length > 100
-                        ? `${review.text.slice(0, 100)}…`
-                        : review.text}
-                    </s-paragraph>
+                  <s-box>
+                    <s-stack gap="small-300">
+                      <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+                        <s-heading>{review.customer}</s-heading>
+                        <s-text color="subdued">{review.date}</s-text>
+                      </s-grid>
+                      <s-text color="subdued">{review.product}</s-text>
+                      <StarRating rating={review.rating} />
+                      <s-paragraph>
+                        {review.text.length > 100
+                          ? `${review.text.slice(0, 100)}…`
+                          : review.text}
+                      </s-paragraph>
+                    </s-stack>
+                  </s-box>
+                  <s-stack justifyContent="start">
+                    <s-button
+                      icon="menu-horizontal"
+                      variant="tertiary"
+                      accessibilityLabel={`Actions for ${review.customer}`}
+                    />
                   </s-stack>
                 </s-grid>
-              </s-stack>
+              </s-clickable>
             ))}
           </s-stack>
         )}
