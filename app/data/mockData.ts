@@ -64,6 +64,24 @@ export const mockLastImport: LastImport = {
 // Set to null to preview the empty state
 // export const mockLastImport: LastImport | null = null;
 
+export interface ImportRecord {
+  id: string;
+  date: string;
+  filename: string;
+  totalRows: number;
+  succeeded: number;
+  failed: number;
+  status: "completed" | "partial" | "failed";
+}
+
+export const mockImportHistory: ImportRecord[] = [
+  { id: "imp_20260423", date: "2026-04-23T14:32:00Z", filename: "reviews_april_2026.csv",   totalRows: 318, succeeded: 304, failed: 14, status: "partial"   },
+  { id: "imp_20260410", date: "2026-04-10T09:15:00Z", filename: "amazon_export.csv",         totalRows: 210, succeeded: 210, failed:  0, status: "completed" },
+  { id: "imp_20260328", date: "2026-03-28T16:48:00Z", filename: "trustpilot_march.csv",      totalRows:  95, succeeded:  81, failed: 14, status: "partial"   },
+  { id: "imp_20260315", date: "2026-03-15T11:02:00Z", filename: "legacy_reviews_dump.csv",   totalRows: 540, succeeded: 540, failed:  0, status: "completed" },
+  { id: "imp_20260301", date: "2026-03-01T08:20:00Z", filename: "initial_import.csv",        totalRows:  62, succeeded:   0, failed: 62, status: "failed"    },
+];
+
 export interface DashboardStats {
   totalReviews: number;
   averageRating: number;
