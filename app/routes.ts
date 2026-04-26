@@ -8,6 +8,7 @@ export default [
     route("reviews", "routes/app.reviews.tsx"),
     route("products", "routes/app.products.tsx"),
     route("settings", "routes/app.settings.tsx"),
+    route("plans", "routes/app.plans.tsx"),
   ]),
   route("auth/login", "routes/auth.login/route.tsx"),
   route("auth/*", "routes/auth.$.tsx"),
