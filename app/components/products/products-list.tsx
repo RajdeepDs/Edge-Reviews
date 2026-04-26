@@ -6,7 +6,6 @@ import {
   useIndexResourceState,
   Text,
   Badge,
-  Avatar,
   InlineStack,
   useBreakpoints,
   ChoiceList,
@@ -14,34 +13,9 @@ import {
 import { DeleteIcon } from "@shopify/polaris-icons";
 import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
-import { mockProducts, mockAllReviews } from "../../data/mockData";
+import type { ProductWithStats } from "../../routes/app.products";
 
 const STATUS_KEYS = ["all", "active", "draft", "archived"] as const;
-
-function buildProductStats() {
-  const stats: Record<string, {
-    reviewCount: number;
-    pendingCount: number;
-    totalRating: number;
-    lastReview: string | null;
-  }> = {};
-
-  for (const r of mockAllReviews) {
-    if (!stats[r.product]) {
-      stats[r.product] = { reviewCount: 0, pendingCount: 0, totalRating: 0, lastReview: null };
-    }
-    const s = stats[r.product];
-    s.reviewCount += 1;
-    s.totalRating += r.rating;
-    if (r.status === "pending") s.pendingCount += 1;
-    if (!s.lastReview || new Date(r.date) > new Date(s.lastReview)) {
-      s.lastReview = r.date;
-    }
-  }
-  return stats;
-}
-
-const productStats = buildProductStats();
 
 function statusBadge(status: string) {
   switch (status) {
@@ -56,23 +30,31 @@ function statusBadge(status: string) {
   }
 }
 
-function StarRating({ total, count }: { total: number; count: number }) {
-  const avg = total / count;
+function StarRating({ avg }: { avg: number }) {
   const full = Math.floor(avg);
   const half = avg - full >= 0.5;
   const empty = 5 - full - (half ? 1 : 0);
   return (
     <Text as="span" variant="bodyMd">
       <span style={{ color: "#f59e0b" }}>
-        {"★".repeat(full)}{half ? "½" : ""}{"☆".repeat(empty)}
+        {"★".repeat(full)}
+        {half ? "½" : ""}
+        {"☆".repeat(empty)}
       </span>{" "}
-      <Text as="span" variant="bodySm" tone="subdued">{avg.toFixed(1)}</Text>
+      <Text as="span" variant="bodySm" tone="subdued">
+        {avg.toFixed(1)}
+      </Text>
     </Text>
   );
 }
 
-export function ProductsList() {
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+interface ProductsListProps {
+  products: ProductWithStats[];
+}
+
+export function ProductsList({ products }: ProductsListProps) {
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
   const { smDown } = useBreakpoints();
   const [selected, setSelected] = useState(0);
@@ -81,27 +63,43 @@ export function ProductsList() {
   const [sortSelected, setSortSelected] = useState(["name asc"]);
   const { mode, setMode } = useSetIndexFiltersMode();
 
-  const allTypes = Array.from(new Set(mockProducts.map((p) => p.type))).sort();
+  const allTypes = Array.from(
+    new Set(products.map((p) => p.type).filter(Boolean)),
+  ).sort();
 
   const tabs: TabProps[] = [
-    { content: "All",      index: 0, onAction: () => {}, id: "all-0",      isLocked: true },
-    { content: "Active",   index: 1, onAction: () => {}, id: "active-1",   isLocked: true },
-    { content: "Draft",    index: 2, onAction: () => {}, id: "draft-2",    isLocked: true },
-    { content: "Archived", index: 3, onAction: () => {}, id: "archived-3", isLocked: true },
+    { content: "All", onAction: () => {}, id: "all-0", isLocked: true },
+    { content: "Active", onAction: () => {}, id: "active-1", isLocked: true },
+    { content: "Draft", onAction: () => {}, id: "draft-2", isLocked: true },
+    {
+      content: "Archived",
+      onAction: () => {},
+      id: "archived-3",
+      isLocked: true,
+    },
   ];
 
   const sortOptions: IndexFiltersProps["sortOptions"] = [
-    { label: "Name",    value: "name asc",    directionLabel: "A–Z" },
-    { label: "Name",    value: "name desc",   directionLabel: "Z–A" },
-    { label: "Rating",  value: "rating desc", directionLabel: "Highest first" },
-    { label: "Rating",  value: "rating asc",  directionLabel: "Lowest first" },
+    { label: "Name", value: "name asc", directionLabel: "A–Z" },
+    { label: "Name", value: "name desc", directionLabel: "Z–A" },
+    { label: "Rating", value: "rating desc", directionLabel: "Highest first" },
+    { label: "Rating", value: "rating asc", directionLabel: "Lowest first" },
     { label: "Reviews", value: "reviews desc", directionLabel: "Most first" },
-    { label: "Reviews", value: "reviews asc",  directionLabel: "Fewest first" },
+    { label: "Reviews", value: "reviews asc", directionLabel: "Fewest first" },
   ];
 
-  const handleTypeFilterChange = useCallback((value: string[]) => setTypeFilter(value), []);
-  const handleTypeFilterRemove = useCallback(() => setTypeFilter(undefined), []);
-  const handleQueryChange = useCallback((value: string) => setQueryValue(value), []);
+  const handleTypeFilterChange = useCallback(
+    (value: string[]) => setTypeFilter(value),
+    [],
+  );
+  const handleTypeFilterRemove = useCallback(
+    () => setTypeFilter(undefined),
+    [],
+  );
+  const handleQueryChange = useCallback(
+    (value: string) => setQueryValue(value),
+    [],
+  );
   const handleQueryClear = useCallback(() => setQueryValue(""), []);
   const handleFiltersClearAll = useCallback(() => {
     setTypeFilter(undefined);
@@ -137,18 +135,24 @@ export function ProductsList() {
 
   const primaryAction: IndexFiltersProps["primaryAction"] = {
     type: "save-as",
-    onAction: async (_value: string) => { await sleep(1); return true; },
+    onAction: async (_value: string) => {
+      await sleep(1);
+      return true;
+    },
     disabled: false,
     loading: false,
   };
 
   const tabStatus = STATUS_KEYS[selected];
-  const filteredProducts = mockProducts
+  const filteredProducts = products
     .filter((p) => tabStatus === "all" || p.status === tabStatus)
     .filter((p) => {
       if (!queryValue) return true;
       const q = queryValue.toLowerCase();
-      return p.name.toLowerCase().includes(q) || p.vendor.toLowerCase().includes(q);
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.vendor.toLowerCase().includes(q)
+      );
     })
     .filter((p) => {
       if (!typeFilter || typeFilter.length === 0) return true;
@@ -158,85 +162,115 @@ export function ProductsList() {
       const [field, dir] = sortSelected[0].split(" ");
       const mult = dir === "asc" ? 1 : -1;
       if (field === "name") return mult * a.name.localeCompare(b.name);
-      if (field === "rating") {
-        const sa = productStats[a.name];
-        const sb = productStats[b.name];
-        const ra = sa && sa.reviewCount > 0 ? sa.totalRating / sa.reviewCount : 0;
-        const rb = sb && sb.reviewCount > 0 ? sb.totalRating / sb.reviewCount : 0;
-        return mult * (ra - rb);
-      }
-      if (field === "reviews") {
-        const ca = productStats[a.name]?.reviewCount ?? 0;
-        const cb = productStats[b.name]?.reviewCount ?? 0;
-        return mult * (ca - cb);
-      }
+      if (field === "rating") return mult * (a.avgRating - b.avgRating);
+      if (field === "reviews") return mult * (a.reviewCount - b.reviewCount);
       return 0;
     });
 
-  const productsWithStringIds = filteredProducts.map((p) => ({ ...p, id: String(p.id) }));
   const resourceName = { singular: "product", plural: "products" };
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    useIndexResourceState(productsWithStringIds);
+    useIndexResourceState(filteredProducts);
 
   const promotedBulkActions = [
-    { content: "Set as active",   onAction: () => console.log("Todo: bulk activate") },
-    { content: "Set as archived", onAction: () => console.log("Todo: bulk archive") },
+    {
+      content: "Set as active",
+      onAction: () => console.log("Todo: bulk activate"),
+    },
+    {
+      content: "Set as archived",
+      onAction: () => console.log("Todo: bulk archive"),
+    },
   ];
 
   const bulkActions = [
-    { content: "Export selected", onAction: () => console.log("Todo: bulk export") },
-    { icon: DeleteIcon, destructive: true, content: "Delete products", onAction: () => console.log("Todo: bulk delete") },
+    {
+      content: "Export selected",
+      onAction: () => console.log("Todo: bulk export"),
+    },
+    {
+      icon: DeleteIcon,
+      destructive: true,
+      content: "Delete products",
+      onAction: () => console.log("Todo: bulk delete"),
+    },
   ];
 
-  const rowMarkup = filteredProducts.map((product, index) => {
-    const stats = productStats[product.name];
-    const hasReviews = stats && stats.reviewCount > 0;
-
-    return (
-      <IndexTable.Row
-        id={String(product.id)}
-        key={product.id}
-        selected={selectedResources.includes(String(product.id))}
-        position={index}
-      >
-        <IndexTable.Cell>
-          <InlineStack gap="200" blockAlign="center">
-            <Avatar initials={product.initials} size="sm" />
-            <div>
-              <InlineStack gap="200" blockAlign="center">
-                <Text variant="bodyMd" fontWeight="semibold" as="span">
-                  {product.name}
-                </Text>
-                {!hasReviews && (
-                  <Badge tone="new">No reviews</Badge>
-                )}
-              </InlineStack>
-              <Text variant="bodySm" tone="subdued" as="p">
-                {product.vendor} · {product.type}
+  const rowMarkup = filteredProducts.map((product, index) => (
+    <IndexTable.Row
+      id={product.id}
+      key={product.id}
+      selected={selectedResources.includes(product.id)}
+      position={index}
+    >
+      <IndexTable.Cell>
+        <InlineStack gap="200" blockAlign="center">
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 6,
+              overflow: "hidden",
+              flexShrink: 0,
+              background: "#f1f1f1",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#6d7175",
+            }}
+          >
+            {product.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                width={36}
+                height={36}
+                style={{ objectFit: "cover", display: "block" }}
+              />
+            ) : (
+              product.initials
+            )}
+          </div>
+          <div>
+            <InlineStack gap="200" blockAlign="center">
+              <Text variant="bodyMd" fontWeight="semibold" as="span">
+                {product.name}
               </Text>
-            </div>
-          </InlineStack>
-        </IndexTable.Cell>
-        <IndexTable.Cell>{statusBadge(product.status)}</IndexTable.Cell>
-        <IndexTable.Cell>
-          {hasReviews && <StarRating total={stats.totalRating} count={stats.reviewCount} />}
-        </IndexTable.Cell>
-        <IndexTable.Cell>
-          {hasReviews && <Text as="span" variant="bodyMd">{stats.reviewCount}</Text>}
-        </IndexTable.Cell>
-        <IndexTable.Cell>
-          {hasReviews && stats.pendingCount > 0 && (
-            <Badge tone="attention">{String(stats.pendingCount)}</Badge>
-          )}
-        </IndexTable.Cell>
-        <IndexTable.Cell>
-          {hasReviews && stats.lastReview && (
-            <Text as="span" variant="bodyMd" tone="subdued">{stats.lastReview}</Text>
-          )}
-        </IndexTable.Cell>
-      </IndexTable.Row>
-    );
-  });
+              {product.reviewCount === 0 && <Badge tone="new">No reviews</Badge>}
+            </InlineStack>
+            <Text variant="bodySm" tone="subdued" as="p">
+              {product.vendor}
+              {product.type ? ` · ${product.type}` : ""}
+            </Text>
+          </div>
+        </InlineStack>
+      </IndexTable.Cell>
+      <IndexTable.Cell>{statusBadge(product.status)}</IndexTable.Cell>
+      <IndexTable.Cell>
+        {product.reviewCount > 0 && <StarRating avg={product.avgRating} />}
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        {product.reviewCount > 0 && (
+          <Text as="span" variant="bodyMd">
+            {product.reviewCount}
+          </Text>
+        )}
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        {product.pendingCount > 0 && (
+          <Badge tone="attention">{String(product.pendingCount)}</Badge>
+        )}
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        {product.lastReview && (
+          <Text as="span" variant="bodyMd" tone="subdued">
+            {product.lastReview}
+          </Text>
+        )}
+      </IndexTable.Cell>
+    </IndexTable.Row>
+  ));
 
   return (
     <LegacyCard>
@@ -264,7 +298,9 @@ export function ProductsList() {
         condensed={smDown}
         resourceName={resourceName}
         itemCount={filteredProducts.length}
-        selectedItemsCount={allResourcesSelected ? "All" : selectedResources.length}
+        selectedItemsCount={
+          allResourcesSelected ? "All" : selectedResources.length
+        }
         onSelectionChange={handleSelectionChange}
         promotedBulkActions={promotedBulkActions}
         bulkActions={bulkActions}
