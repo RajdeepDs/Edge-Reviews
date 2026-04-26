@@ -35,19 +35,25 @@ export default function SettingsPage() {
   const shopify = useAppBridge();
 
   const [settings, setSettings] = useState({
-    autoSendRequests: true,
-    requestDelayDays: "3",
-    requestTemplate: "default",
+    importAutoPublish: false,
+    importDuplicateDetection: true,
+    importSourceLabel: "CSV Import",
+    importMinRating: "1",
 
     autoPublish: false,
     minAutoPublishRating: "4",
     flagProfanity: true,
     requireVerifiedPurchase: true,
+    minReviewLength: "10",
+    autoRejectOneStar: false,
 
     showStarRating: true,
     showReviewCount: true,
+    showVerifiedBadge: true,
+    showReviewerAvatar: true,
     widgetTheme: "light",
     widgetLayout: "list",
+    accentColor: "#EF9F27",
 
     emailOnNewReview: true,
     notificationEmail: "",
@@ -57,10 +63,26 @@ export default function SettingsPage() {
     replySignature: "",
   });
 
+  const [emailError, setEmailError] = useState("");
+
   const update = (key: keyof typeof settings, value: string | boolean) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
 
+  const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
   const handleSave = () => shopify.toast.show("Settings saved!");
+
+  const handleSendTestNotification = () => {
+    if (!settings.notificationEmail) {
+      setEmailError("Enter an email address before sending a test.");
+      return;
+    }
+    if (!isValidEmail(settings.notificationEmail)) {
+      setEmailError("Enter a valid email address.");
+      return;
+    }
+    shopify.toast.show(`Test notification sent to ${settings.notificationEmail}`);
+  };
 
   return (
     <s-page heading="Settings" inlineSize="base">
@@ -70,56 +92,65 @@ export default function SettingsPage() {
 
       <s-stack gap="large">
 
-        {/* ── Review Requests ── */}
-        <s-section heading="Review Requests">
+        {/* ── Import Settings ── */}
+        <s-section heading="Import Settings">
           <s-stack gap="base">
             <s-text color="subdued">
-              Configure when and how review requests are sent to customers after a purchase.
+              Control how reviews imported via CSV are processed and published.
             </s-text>
             <s-divider />
 
             <SettingToggleRow
-              title="Auto-send review requests"
-              description="Automatically send a review request email after each fulfilled order."
-              checked={settings.autoSendRequests}
-              onToggle={() => update("autoSendRequests", !settings.autoSendRequests)}
+              title="Auto-publish imported reviews"
+              description="Imported CSV reviews will be published immediately without manual approval."
+              checked={settings.importAutoPublish}
+              onToggle={() => update("importAutoPublish", !settings.importAutoPublish)}
             />
 
-            {settings.autoSendRequests && (
+            {settings.importAutoPublish && (
               <>
                 <s-divider />
-                <s-grid gridTemplateColumns="1fr 1fr" gap="base">
-                  <s-stack gap="small-200">
-                    <s-text>Days after fulfillment</s-text>
-                    <s-text color="subdued">
-                      How many days to wait before sending the request.
-                    </s-text>
-                    <div onInput={(e: any) => update("requestDelayDays", e.target.value)}>
-                      <s-text-field
-                        type="number"
-                        value={settings.requestDelayDays}
-                        placeholder="3"
-                        min="1"
-                        max="30"
-                      />
-                    </div>
-                  </s-stack>
-                  <s-stack gap="small-200">
-                    <s-text>Email template</s-text>
-                    <s-text color="subdued">
-                      Template used for review request emails.
-                    </s-text>
-                    <div onChange={(e: any) => update("requestTemplate", e.target.value)}>
-                      <s-select value={settings.requestTemplate}>
-                        <s-option value="default">Default</s-option>
-                        <s-option value="minimal">Minimal</s-option>
-                        <s-option value="branded">Branded</s-option>
-                      </s-select>
-                    </div>
-                  </s-stack>
-                </s-grid>
+                <s-stack gap="small-200">
+                  <s-text>Minimum star rating to auto-publish</s-text>
+                  <s-text color="subdued">
+                    Reviews below this rating are held for manual review instead of being published automatically.
+                  </s-text>
+                  <div onChange={(e: any) => update("importMinRating", e.target.value)}>
+                    <s-select value={settings.importMinRating}>
+                      <s-option value="5">5 stars only</s-option>
+                      <s-option value="4">4 stars and above</s-option>
+                      <s-option value="3">3 stars and above</s-option>
+                      <s-option value="2">2 stars and above</s-option>
+                      <s-option value="1">All ratings</s-option>
+                    </s-select>
+                  </div>
+                </s-stack>
               </>
             )}
+
+            <s-divider />
+
+            <SettingToggleRow
+              title="Duplicate detection"
+              description="Skip reviews that already exist based on customer email and product combination."
+              checked={settings.importDuplicateDetection}
+              onToggle={() => update("importDuplicateDetection", !settings.importDuplicateDetection)}
+            />
+
+            <s-divider />
+
+            <s-stack gap="small-200">
+              <s-text>Default import source label</s-text>
+              <s-text color="subdued">
+                Label shown in the Source column for reviews imported via CSV.
+              </s-text>
+              <div onInput={(e: any) => update("importSourceLabel", e.target.value)}>
+                <s-text-field
+                  value={settings.importSourceLabel}
+                  placeholder="CSV Import"
+                />
+              </div>
+            </s-stack>
           </s-stack>
         </s-section>
 
@@ -133,7 +164,7 @@ export default function SettingsPage() {
 
             <SettingToggleRow
               title="Auto-publish reviews"
-              description="Publish new reviews automatically without manual approval."
+              description="Publish new reviews automatically without manual approval. Reviews that don't meet criteria will be held in Pending for manual approval."
               checked={settings.autoPublish}
               onToggle={() => update("autoPublish", !settings.autoPublish)}
             />
@@ -178,59 +209,130 @@ export default function SettingsPage() {
                 update("requireVerifiedPurchase", !settings.requireVerifiedPurchase)
               }
             />
+
+            <s-divider />
+
+            <s-stack gap="small-200">
+              <s-text>Minimum review length</s-text>
+              <s-text color="subdued">
+                Reviews shorter than this will be rejected. Use this to filter out low-effort submissions like "ok" or "good".
+              </s-text>
+              <div onInput={(e: any) => update("minReviewLength", e.target.value)}>
+                <s-text-field
+                  type="number"
+                  value={settings.minReviewLength}
+                  placeholder="10"
+                  min="0"
+                  max="500"
+                  suffix="characters"
+                />
+              </div>
+            </s-stack>
+
+            <s-divider />
+
+            <SettingToggleRow
+              title="Auto-reject 1★ reviews"
+              description="Automatically reject all one-star reviews without manual review. Useful for merchants who want to curate their storefront aggressively."
+              checked={settings.autoRejectOneStar}
+              onToggle={() => update("autoRejectOneStar", !settings.autoRejectOneStar)}
+            />
           </s-stack>
         </s-section>
 
         {/* ── Widget Display ── */}
         <s-section heading="Widget Display">
           <s-stack gap="base">
-            <s-text color="subdued">
-              Customize how the review widget appears on your product pages.
-            </s-text>
-            <s-divider />
+              <s-text color="subdued">
+                Customize how the review widget appears on your product pages.
+              </s-text>
+              <s-divider />
 
-            <SettingToggleRow
-              title="Show star rating"
-              description="Display the average star rating at the top of the reviews section."
-              checked={settings.showStarRating}
-              onToggle={() => update("showStarRating", !settings.showStarRating)}
-            />
+              <SettingToggleRow
+                title="Show star rating"
+                description="Display the average star rating at the top of the reviews section."
+                checked={settings.showStarRating}
+                onToggle={() => update("showStarRating", !settings.showStarRating)}
+              />
 
-            <s-divider />
+              <s-divider />
 
-            <SettingToggleRow
-              title="Show review count"
-              description="Display the total number of reviews next to the star rating."
-              checked={settings.showReviewCount}
-              onToggle={() => update("showReviewCount", !settings.showReviewCount)}
-            />
+              <SettingToggleRow
+                title="Show review count"
+                description="Display the total number of reviews next to the star rating."
+                checked={settings.showReviewCount}
+                onToggle={() => update("showReviewCount", !settings.showReviewCount)}
+              />
 
-            <s-divider />
+              <s-divider />
 
-            <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+              <SettingToggleRow
+                title="Show verified purchase badge"
+                description="Display a badge on reviews from customers who purchased the product."
+                checked={settings.showVerifiedBadge}
+                onToggle={() => update("showVerifiedBadge", !settings.showVerifiedBadge)}
+              />
+
+              <s-divider />
+
+              <SettingToggleRow
+                title="Show reviewer avatar"
+                description="Display an avatar with the reviewer's initials next to their name."
+                checked={settings.showReviewerAvatar}
+                onToggle={() => update("showReviewerAvatar", !settings.showReviewerAvatar)}
+              />
+
+              <s-divider />
+
+              <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                <s-stack gap="small-200">
+                  <s-text>Widget theme</s-text>
+                  <s-text color="subdued">Color theme for the reviews widget.</s-text>
+                  <div onChange={(e: any) => update("widgetTheme", e.target.value)}>
+                    <s-select value={settings.widgetTheme}>
+                      <s-option value="light">Light</s-option>
+                      <s-option value="dark">Dark</s-option>
+                      <s-option value="auto">Match store theme</s-option>
+                    </s-select>
+                  </div>
+                </s-stack>
+                <s-stack gap="small-200">
+                  <s-text>Widget layout</s-text>
+                  <s-text color="subdued">How reviews are arranged on the page.</s-text>
+                  <div onChange={(e: any) => update("widgetLayout", e.target.value)}>
+                    <s-select value={settings.widgetLayout}>
+                      <s-option value="list">List</s-option>
+                      <s-option value="grid">Grid</s-option>
+                      <s-option value="carousel">Carousel</s-option>
+                    </s-select>
+                  </div>
+                </s-stack>
+              </s-grid>
+
+              <s-divider />
+
               <s-stack gap="small-200">
-                <s-text>Widget theme</s-text>
-                <s-text color="subdued">Color theme for the reviews widget.</s-text>
-                <div onChange={(e: any) => update("widgetTheme", e.target.value)}>
-                  <s-select value={settings.widgetTheme}>
-                    <s-option value="light">Light</s-option>
-                    <s-option value="dark">Dark</s-option>
-                    <s-option value="auto">Match store theme</s-option>
-                  </s-select>
+                <s-text>Accent color</s-text>
+                <s-text color="subdued">Applied to stars, badges, and verified purchase labels.</s-text>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <input
+                    type="color"
+                    value={settings.accentColor}
+                    onChange={(e) => update("accentColor", e.target.value)}
+                    style={{ width: "36px", height: "36px", padding: "2px", border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer", background: "none" }}
+                  />
+                  <div onInput={(e: any) => {
+                    const val = e.target.value;
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) update("accentColor", val);
+                  }}>
+                    <s-text-field
+                      value={settings.accentColor}
+                      placeholder="#EF9F27"
+                      maxlength="7"
+                    />
+                  </div>
                 </div>
               </s-stack>
-              <s-stack gap="small-200">
-                <s-text>Widget layout</s-text>
-                <s-text color="subdued">How reviews are arranged on the page.</s-text>
-                <div onChange={(e: any) => update("widgetLayout", e.target.value)}>
-                  <s-select value={settings.widgetLayout}>
-                    <s-option value="list">List</s-option>
-                    <s-option value="grid">Grid</s-option>
-                    <s-option value="masonry">Masonry</s-option>
-                  </s-select>
-                </div>
-              </s-stack>
-            </s-grid>
           </s-stack>
         </s-section>
 
@@ -256,13 +358,27 @@ export default function SettingsPage() {
                   <s-stack gap="small-200">
                     <s-text>Notification email</s-text>
                     <s-text color="subdued">Address where notifications will be sent.</s-text>
-                    <div onInput={(e: any) => update("notificationEmail", e.target.value)}>
+                    <div onInput={(e: any) => {
+                      const val = e.target.value;
+                      update("notificationEmail", val);
+                      setEmailError(val && !isValidEmail(val) ? "Enter a valid email address." : "");
+                    }}>
                       <s-text-field
                         type="email"
                         value={settings.notificationEmail}
                         placeholder="you@yourstore.com"
+                        error={emailError || undefined}
                       />
                     </div>
+                    {emailError && (
+                      <s-text color="critical">{emailError}</s-text>
+                    )}
+                    <s-button
+                      variant="secondary"
+                      onClick={handleSendTestNotification}
+                    >
+                      Send test notification
+                    </s-button>
                   </s-stack>
                   <s-stack gap="small-200">
                     <s-text>Frequency</s-text>
