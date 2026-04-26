@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
                   {mockStats.pendingReviews} reviews pending approval
                 </div>
                 <div style={{ fontSize: "13px", color: "#7d5a00", marginTop: "2px" }}>
-                  These won't appear on your storefront until you approve them.
+                  These won&apos;t appear on your storefront until you approve them.
                 </div>
               </div>
             </div>
@@ -170,27 +170,30 @@ export default function AnalyticsPage() {
             </s-grid>
 
             {/* ── Top products ── */}
-            <s-section heading="Top Rated Products">
-              <s-stack gap="small-300">
-                <s-text color="subdued">Products with the most and highest-rated reviews.</s-text>
-                <s-stack gap="small-400">
-                  {mockTopProducts.map((product, index) => (
-                    <s-stack key={product.id} gap="small-300">
-                      {index > 0 && <s-divider />}
-                      <s-grid gridTemplateColumns="auto 1fr auto" gap="small-300" alignItems="center">
-                        <span style={{ fontSize: "20px", lineHeight: 1 }}>{product.emoji}</span>
-                        <s-stack gap="small-100">
-                          <s-text>{product.name}</s-text>
-                          <s-text color="subdued">{product.reviewCount} reviews</s-text>
-                        </s-stack>
-                        <s-stack gap="small-100" alignItems="end">
-                          <s-text>{product.avgRating.toFixed(1)} ★</s-text>
-                        </s-stack>
-                      </s-grid>
-                    </s-stack>
+            <s-section heading="Top Rated Products" padding="base">
+              <div style={{border: "1px solid #eaeaea", borderRadius: "8px", overflow: "clip"}}>
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header>Product</s-table-header>
+                  <s-table-header format="numeric">Reviews</s-table-header>
+                  <s-table-header format="numeric">Avg Rating</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {mockTopProducts.map((product) => (
+                    <s-table-row key={product.id}>
+                      <s-table-cell>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                          <span>{product.emoji}</span>
+                          <span>{product.name}</span>
+                        </span>
+                      </s-table-cell>
+                      <s-table-cell>{product.reviewCount}</s-table-cell>
+                      <s-table-cell>{product.avgRating.toFixed(1)} ★</s-table-cell>
+                    </s-table-row>
                   ))}
-                </s-stack>
-              </s-stack>
+                </s-table-body>
+              </s-table>
+                  </div>
             </s-section>
           </>
         ) : (
@@ -216,32 +219,20 @@ export default function AnalyticsPage() {
         )}
 
         {/* ── Import History ── */}
-        <s-section heading="Import History">
+        <s-section heading="Import History" padding="base">
           {hasImportHistory ? (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #e1e3e5" }}>
-                  {["Date", "Filename", "Total", "Succeeded", "Failed", "Status"].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "8px 12px",
-                        textAlign: h === "Total" || h === "Succeeded" || h === "Failed" ? "right" : "left",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        color: "#6d7175",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {mockImportHistory.map((row, i) => {
+            <div style={{ border: "1px solid #eaeaea", borderRadius: "8px", overflow: "clip" }}>
+            <s-table>
+              <s-table-header-row>
+                <s-table-header>Date</s-table-header>
+                <s-table-header>Filename</s-table-header>
+                <s-table-header format="numeric">Total</s-table-header>
+                <s-table-header format="numeric">Succeeded</s-table-header>
+                <s-table-header format="numeric">Failed</s-table-header>
+                <s-table-header>Status</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {mockImportHistory.map((row) => {
                   const statusStyle: Record<typeof row.status, { bg: string; color: string; label: string }> = {
                     completed: { bg: "#e6f4ea", color: "#2d7a3f", label: "Completed" },
                     partial:   { bg: "#fef9e7", color: "#7d5a00", label: "Partial"   },
@@ -252,9 +243,9 @@ export default function AnalyticsPage() {
                     month: "short", day: "numeric", year: "numeric",
                   });
                   return (
-                    <tr key={row.id} style={{ borderBottom: i < mockImportHistory.length - 1 ? "1px solid #f1f1f1" : "none" }}>
-                      <td style={{ padding: "12px 12px", fontSize: "13px", color: "#6d7175", whiteSpace: "nowrap" }}>{date}</td>
-                      <td style={{ padding: "12px 12px", fontSize: "13px", color: "#1a1a1a", maxWidth: "220px" }}>
+                    <s-table-row key={row.id}>
+                      <s-table-cell>{date}</s-table-cell>
+                      <s-table-cell>
                         <Link
                           to={`/app/reviews?source=${row.id}`}
                           style={{ color: "#005bd3", textDecoration: "none", fontWeight: 500 }}
@@ -263,20 +254,21 @@ export default function AnalyticsPage() {
                         >
                           {row.filename}
                         </Link>
-                      </td>
-                      <td style={{ padding: "12px 12px", fontSize: "13px", color: "#1a1a1a", textAlign: "right", fontWeight: 600 }}>{row.totalRows.toLocaleString()}</td>
-                      <td style={{ padding: "12px 12px", fontSize: "13px", color: "#2d7a3f", textAlign: "right", fontWeight: 600 }}>{row.succeeded.toLocaleString()}</td>
-                      <td style={{ padding: "12px 12px", fontSize: "13px", color: row.failed > 0 ? "#b52b27" : "#6d7175", textAlign: "right", fontWeight: 600 }}>{row.failed.toLocaleString()}</td>
-                      <td style={{ padding: "12px 12px" }}>
+                      </s-table-cell>
+                      <s-table-cell>{row.totalRows.toLocaleString()}</s-table-cell>
+                      <s-table-cell>{row.succeeded.toLocaleString()}</s-table-cell>
+                      <s-table-cell>{row.failed.toLocaleString()}</s-table-cell>
+                      <s-table-cell>
                         <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "20px", background: s.bg, color: s.color }}>
                           {s.label}
                         </span>
-                      </td>
-                    </tr>
+                      </s-table-cell>
+                    </s-table-row>
                   );
                 })}
-              </tbody>
-            </table>
+              </s-table-body>
+            </s-table>
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "36px 24px", gap: "12px", textAlign: "center" }}>
               <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: "#f6f6f7", display: "flex", alignItems: "center", justifyContent: "center" }}>
