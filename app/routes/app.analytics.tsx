@@ -1,50 +1,155 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { mockStats, mockTopProducts, mockImportHistory } from "../data/mockData";
 import { AnalyticsFilterBar } from "../components/dashboard/AnalyticsFilterBar";
 import { StatsRow } from "../components/dashboard/StatsRow";
+import prisma from "../db.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
+const RATING_COLORS: Record<number, string> = {
+  5: "#16a34a",
+  4: "#4ade80",
+  3: "#EF9F27",
+  2: "#ef4444",
+  1: "#b91c1c",
 };
 
-const ratingDistribution = [
-  { stars: 5, count: 142, color: "#16a34a" },
-  { stars: 4, count: 67,  color: "#4ade80" },
-  { stars: 3, count: 23,  color: "#EF9F27" },
-  { stars: 2, count: 10,  color: "#ef4444" },
-  { stars: 1, count: 5,   color: "#b91c1c" },
-];
+function parseDateRange(url: URL): { fromDate: Date; toDate: Date } {
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
+  const toDate = to ? new Date(to + "T23:59:59.999Z") : new Date();
+  const fromDate = from
+    ? new Date(from + "T00:00:00.000Z")
+    : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+  return { fromDate, toDate };
+}
 
-const monthlyReviews = [
-  { month: "Aug", count: 18 },
-  { month: "Sep", count: 24 },
-  { month: "Oct", count: 31 },
-  { month: "Nov", count: 42 },
-  { month: "Dec", count: 38 },
-  { month: "Jan", count: 47 },
-];
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const { shop } = session;
 
-const maxRatingCount = Math.max(...ratingDistribution.map((r) => r.count));
-const maxMonthlyCount = Math.max(...monthlyReviews.map((m) => m.count));
-const totalRatings = ratingDistribution.reduce((s, r) => s + r.count, 0);
+  const { fromDate, toDate } = parseDateRange(new URL(request.url));
+  const dateFilter = { gte: fromDate, lte: toDate };
 
-// Toggle to false to preview empty states
-const hasReviewData = mockStats.totalReviews > 0;
-const hasImportHistory = mockImportHistory.length > 0;
+  const [
+    totalReviews,
+    ratingAgg,
+    pendingCount,
+    ratingDistributionRaw,
+    monthlyRaw,
+    topProductsRaw,
+    importHistory,
+  ] = await Promise.all([
+    prisma.review.count({ where: { shop, createdAt: dateFilter } }),
+
+    prisma.review.aggregate({
+      where: { shop, createdAt: dateFilter },
+      _avg: { rating: true },
+    }),
+
+    // Pending is always across all time — it's a moderation queue
+    prisma.review.count({ where: { shop, status: "pending" } }),
+
+    prisma.review.groupBy({
+      by: ["rating"],
+      where: { shop, createdAt: dateFilter },
+      _count: { id: true },
+      orderBy: { rating: "desc" },
+    }),
+
+    prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
+      SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'Mon YYYY') AS month,
+             COUNT(*) AS count
+      FROM "Review"
+      WHERE shop = ${shop}
+        AND "createdAt" >= ${fromDate}
+        AND "createdAt" <= ${toDate}
+      GROUP BY DATE_TRUNC('month', "createdAt")
+      ORDER BY DATE_TRUNC('month', "createdAt") ASC
+    `,
+
+    prisma.review.groupBy({
+      by: ["productTitle"],
+      where: { shop, createdAt: dateFilter },
+      _avg: { rating: true },
+      _count: { id: true },
+      orderBy: { _avg: { rating: "desc" } },
+      take: 5,
+    }),
+
+    prisma.importRecord.findMany({
+      where: { shop },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const stats = {
+    totalReviews,
+    averageRating: ratingAgg._avg.rating ?? 0,
+    requestsSent: 0,
+    conversionRate: 0,
+    pendingReviews: pendingCount,
+  };
+
+  const ratingMap = new Map(
+    ratingDistributionRaw.map((r) => [r.rating, r._count.id]),
+  );
+  const ratingDistribution = [5, 4, 3, 2, 1].map((stars) => ({
+    stars,
+    count: ratingMap.get(stars) ?? 0,
+    color: RATING_COLORS[stars],
+  }));
+
+  const monthlyReviews = monthlyRaw.map((r) => ({
+    month: r.month,
+    count: Number(r.count),
+  }));
+
+  const topProducts = topProductsRaw.map((p, i) => ({
+    id: i + 1,
+    name: p.productTitle,
+    emoji: "📦",
+    avgRating: p._avg.rating ?? 0,
+    reviewCount: p._count.id,
+  }));
+
+  const importHistoryData = importHistory.map((r) => ({
+    id: r.id,
+    date: r.createdAt.toISOString(),
+    filename: r.filename,
+    totalRows: r.totalRows,
+    succeeded: r.succeeded,
+    failed: r.failed,
+    status: r.status as "completed" | "partial" | "failed",
+  }));
+
+  return {
+    stats,
+    ratingDistribution,
+    monthlyReviews,
+    topProducts,
+    importHistory: importHistoryData,
+  };
+};
 
 export default function AnalyticsPage() {
+  const { stats, ratingDistribution, monthlyReviews, topProducts, importHistory } =
+    useLoaderData<typeof loader>();
+
+  const hasReviewData = stats.totalReviews > 0;
+  const hasImportHistory = importHistory.length > 0;
+
+  const maxRatingCount = Math.max(...ratingDistribution.map((r) => r.count), 1);
+  const maxMonthlyCount = Math.max(...monthlyReviews.map((m) => m.count), 1);
+  const totalRatings = ratingDistribution.reduce((s, r) => s + r.count, 0);
+
   return (
     <s-page heading="Analytics" inlineSize="base">
       <s-stack gap="large">
 
         <AnalyticsFilterBar />
 
-        {/* ── Pending approval callout ── */}
-        {mockStats.pendingReviews > 0 && (
+        {stats.pendingReviews > 0 && (
           <div
             style={{
               display: "flex",
@@ -75,7 +180,7 @@ export default function AnalyticsPage() {
               </div>
               <div>
                 <div style={{ fontWeight: 700, fontSize: "15px", color: "#b45309" }}>
-                  {mockStats.pendingReviews} reviews pending approval
+                  {stats.pendingReviews} reviews pending approval
                 </div>
                 <div style={{ fontSize: "13px", color: "#7d5a00", marginTop: "2px" }}>
                   These won&apos;t appear on your storefront until you approve them.
@@ -100,16 +205,16 @@ export default function AnalyticsPage() {
           </div>
         )}
 
-        <StatsRow stats={mockStats} />
+        <StatsRow stats={stats} />
 
         {hasReviewData ? (
           <>
             <s-grid gridTemplateColumns="2fr 1fr" gap="base">
 
-              {/* ── Monthly review trend ── */}
+              {/* Monthly review trend */}
               <s-section heading="Reviews Over Time">
                 <s-stack gap="base">
-                  <s-text color="subdued">Monthly review volume for the last 6 months.</s-text>
+                  <s-text color="subdued">Monthly review volume for the selected period.</s-text>
                   <div style={{ display: "flex", alignItems: "flex-end", gap: "12px", height: "140px", paddingTop: "8px" }}>
                     {monthlyReviews.map(({ month, count }) => (
                       <div
@@ -134,7 +239,7 @@ export default function AnalyticsPage() {
                 </s-stack>
               </s-section>
 
-              {/* ── Rating distribution ── */}
+              {/* Rating distribution */}
               <s-section heading="Rating Breakdown">
                 <s-stack gap="small-300">
                   {ratingDistribution.map(({ stars, count, color }) => (
@@ -150,7 +255,7 @@ export default function AnalyticsPage() {
                         <div style={{ flex: 1, height: "8px", background: "#f3f4f6", borderRadius: "4px", overflow: "hidden" }}>
                           <div
                             style={{
-                              width: `${(count / maxRatingCount) * 100}%`,
+                              width: `${totalRatings > 0 ? (count / maxRatingCount) * 100 : 0}%`,
                               height: "100%",
                               background: color,
                               borderRadius: "4px",
@@ -159,7 +264,7 @@ export default function AnalyticsPage() {
                           />
                         </div>
                         <span style={{ fontSize: "12px", color: "#6d7175", width: "36px", textAlign: "right", flexShrink: 0 }}>
-                          {Math.round((count / totalRatings) * 100)}%
+                          {totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0}%
                         </span>
                       </div>
                     </Link>
@@ -169,31 +274,31 @@ export default function AnalyticsPage() {
 
             </s-grid>
 
-            {/* ── Top products ── */}
+            {/* Top products */}
             <s-section heading="Top Rated Products" padding="base">
-              <div style={{border: "1px solid #eaeaea", borderRadius: "8px", overflow: "clip"}}>
-              <s-table>
-                <s-table-header-row>
-                  <s-table-header>Product</s-table-header>
-                  <s-table-header format="numeric">Reviews</s-table-header>
-                  <s-table-header format="numeric">Avg Rating</s-table-header>
-                </s-table-header-row>
-                <s-table-body>
-                  {mockTopProducts.map((product) => (
-                    <s-table-row key={product.id}>
-                      <s-table-cell>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                          <span>{product.emoji}</span>
-                          <span>{product.name}</span>
-                        </span>
-                      </s-table-cell>
-                      <s-table-cell>{product.reviewCount}</s-table-cell>
-                      <s-table-cell>{product.avgRating.toFixed(1)} ★</s-table-cell>
-                    </s-table-row>
-                  ))}
-                </s-table-body>
-              </s-table>
-                  </div>
+              <div style={{ border: "1px solid #eaeaea", borderRadius: "8px", overflow: "clip" }}>
+                <s-table>
+                  <s-table-header-row>
+                    <s-table-header>Product</s-table-header>
+                    <s-table-header format="numeric">Reviews</s-table-header>
+                    <s-table-header format="numeric">Avg Rating</s-table-header>
+                  </s-table-header-row>
+                  <s-table-body>
+                    {topProducts.map((product) => (
+                      <s-table-row key={product.id}>
+                        <s-table-cell>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                            <span>{product.emoji}</span>
+                            <span>{product.name}</span>
+                          </span>
+                        </s-table-cell>
+                        <s-table-cell>{product.reviewCount}</s-table-cell>
+                        <s-table-cell>{product.avgRating.toFixed(1)} ★</s-table-cell>
+                      </s-table-row>
+                    ))}
+                  </s-table-body>
+                </s-table>
+              </div>
             </s-section>
           </>
         ) : (
@@ -218,56 +323,56 @@ export default function AnalyticsPage() {
           </s-section>
         )}
 
-        {/* ── Import History ── */}
+        {/* Import History */}
         <s-section heading="Import History" padding="base">
           {hasImportHistory ? (
             <div style={{ border: "1px solid #eaeaea", borderRadius: "8px", overflow: "clip" }}>
-            <s-table>
-              <s-table-header-row>
-                <s-table-header>Date</s-table-header>
-                <s-table-header>Filename</s-table-header>
-                <s-table-header format="numeric">Total</s-table-header>
-                <s-table-header format="numeric">Succeeded</s-table-header>
-                <s-table-header format="numeric">Failed</s-table-header>
-                <s-table-header>Status</s-table-header>
-              </s-table-header-row>
-              <s-table-body>
-                {mockImportHistory.map((row) => {
-                  const statusStyle: Record<typeof row.status, { bg: string; color: string; label: string }> = {
-                    completed: { bg: "#e6f4ea", color: "#2d7a3f", label: "Completed" },
-                    partial:   { bg: "#fef9e7", color: "#7d5a00", label: "Partial"   },
-                    failed:    { bg: "#fce8e6", color: "#b52b27", label: "Failed"    },
-                  };
-                  const s = statusStyle[row.status];
-                  const date = new Date(row.date).toLocaleDateString("en-US", {
-                    month: "short", day: "numeric", year: "numeric",
-                  });
-                  return (
-                    <s-table-row key={row.id}>
-                      <s-table-cell>{date}</s-table-cell>
-                      <s-table-cell>
-                        <Link
-                          to={`/app/reviews?source=${row.id}`}
-                          style={{ color: "#005bd3", textDecoration: "none", fontWeight: 500 }}
-                          onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")}
-                          onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")}
-                        >
-                          {row.filename}
-                        </Link>
-                      </s-table-cell>
-                      <s-table-cell>{row.totalRows.toLocaleString()}</s-table-cell>
-                      <s-table-cell>{row.succeeded.toLocaleString()}</s-table-cell>
-                      <s-table-cell>{row.failed.toLocaleString()}</s-table-cell>
-                      <s-table-cell>
-                        <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "20px", background: s.bg, color: s.color }}>
-                          {s.label}
-                        </span>
-                      </s-table-cell>
-                    </s-table-row>
-                  );
-                })}
-              </s-table-body>
-            </s-table>
+              <s-table>
+                <s-table-header-row>
+                  <s-table-header>Date</s-table-header>
+                  <s-table-header>Filename</s-table-header>
+                  <s-table-header format="numeric">Total</s-table-header>
+                  <s-table-header format="numeric">Succeeded</s-table-header>
+                  <s-table-header format="numeric">Failed</s-table-header>
+                  <s-table-header>Status</s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {importHistory.map((row) => {
+                    const statusStyle: Record<typeof row.status, { bg: string; color: string; label: string }> = {
+                      completed: { bg: "#e6f4ea", color: "#2d7a3f", label: "Completed" },
+                      partial:   { bg: "#fef9e7", color: "#7d5a00", label: "Partial"   },
+                      failed:    { bg: "#fce8e6", color: "#b52b27", label: "Failed"    },
+                    };
+                    const s = statusStyle[row.status];
+                    const date = new Date(row.date).toLocaleDateString("en-US", {
+                      month: "short", day: "numeric", year: "numeric",
+                    });
+                    return (
+                      <s-table-row key={row.id}>
+                        <s-table-cell>{date}</s-table-cell>
+                        <s-table-cell>
+                          <Link
+                            to={`/app/reviews?source=${row.id}`}
+                            style={{ color: "#005bd3", textDecoration: "none", fontWeight: 500 }}
+                            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")}
+                            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")}
+                          >
+                            {row.filename}
+                          </Link>
+                        </s-table-cell>
+                        <s-table-cell>{row.totalRows.toLocaleString()}</s-table-cell>
+                        <s-table-cell>{row.succeeded.toLocaleString()}</s-table-cell>
+                        <s-table-cell>{row.failed.toLocaleString()}</s-table-cell>
+                        <s-table-cell>
+                          <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "20px", background: s.bg, color: s.color }}>
+                            {s.label}
+                          </span>
+                        </s-table-cell>
+                      </s-table-row>
+                    );
+                  })}
+                </s-table-body>
+              </s-table>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "36px 24px", gap: "12px", textAlign: "center" }}>
