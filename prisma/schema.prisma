@@ -1,17 +1,17 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
 }
+
 
 model Session {
   id            String    @id
@@ -31,4 +31,48 @@ model Session {
   emailVerified Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  shop             String
+  shopifyProductId String?
+  productTitle     String
+  customerName     String
+  customerEmail    String?
+  rating           Int
+  body             String
+  status           String   @default("pending")
+  source           String?
+  importId         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([shop])
+  @@index([shop, status])
+  @@index([shop, importId])
+}
+
+model ImportRecord {
+  id        String   @id @default(cuid())
+  shop      String
+  filename  String
+  totalRows Int
+  succeeded Int
+  failed    Int
+  status    String
+  createdAt DateTime @default(now())
+
+  @@index([shop])
+}
+
+model ShopSettings {
+  shop             String   @id
+  embedActivated   Boolean  @default(false)
+  reviewsImported  Boolean  @default(false)
+  confirmedWorking Boolean  @default(false)
+  autoPublish      Boolean  @default(false)
+  widgetEnabled    Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
