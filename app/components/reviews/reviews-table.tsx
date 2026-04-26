@@ -14,105 +14,97 @@ import {
 import { DeleteIcon } from "@shopify/polaris-icons";
 import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
-import { mockAllReviews } from "../../data/mockData";
+import { useFetcher, useSearchParams } from "react-router";
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+export type ReviewRow = {
+  id: string;
+  customer: string;
+  initials: string;
+  rating: number;
+  text: string;
+  product: string;
+  date: string;
+  status: "published" | "pending" | "rejected";
+  importId: string | null;
+};
+
+interface ReviewsTableProps {
+  reviews: ReviewRow[];
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 const STATUS_KEYS = ["all", "published", "pending", "rejected"] as const;
 
-function statusBadge(status: string | undefined) {
+function statusBadge(status: string) {
   switch (status) {
-    case "published":
-      return <Badge tone="success">Published</Badge>;
-    case "pending":
-      return <Badge tone="attention">Pending</Badge>;
-    case "rejected":
-      return <Badge tone="critical">Rejected</Badge>;
-    default:
-      return null;
+    case "published": return <Badge tone="success">Published</Badge>;
+    case "pending":   return <Badge tone="attention">Pending</Badge>;
+    case "rejected":  return <Badge tone="critical">Rejected</Badge>;
+    default:          return null;
   }
 }
 
-export function ReviewsTable() {
-  const sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
+// ── Component ─────────────────────────────────────────────────────────────────
 
-  const { smDown } = useBreakpoints();
-  const [publishedIds, setPublishedIds] = useState<Set<string>>(
-    () => new Set(mockAllReviews.filter((r) => r.status === "published").map((r) => String(r.id))),
-  );
-  const handleTogglePublish = (id: string) => {
-    setPublishedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+export function ReviewsTable({ reviews }: ReviewsTableProps) {
+  const [searchParams] = useSearchParams();
+  const fetcher = useFetcher();
 
-  const [selected, setSelected] = useState(0);
+  // Seed tab from ?status= URL param
+  const statusParam = searchParams.get("status");
+  const initialTab =
+    statusParam === "published" ? 1
+    : statusParam === "pending"   ? 2
+    : statusParam === "rejected"  ? 3
+    : 0;
+
+  const [selected, setSelected] = useState(initialTab);
   const [queryValue, setQueryValue] = useState("");
-  const [ratingFilter, setRatingFilter] = useState<string[] | undefined>(
-    undefined,
-  );
+  const [ratingFilter, setRatingFilter] = useState<string[] | undefined>(undefined);
   const [sortSelected, setSortSelected] = useState(["date desc"]);
   const { mode, setMode } = useSetIndexFiltersMode();
 
+  // Optimistic local statuses — seeded from DB, updated immediately on toggle
+  const [localStatuses, setLocalStatuses] = useState<Record<string, ReviewRow["status"]>>(
+    () => Object.fromEntries(reviews.map((r) => [r.id, r.status])),
+  );
+
+  const handleTogglePublish = useCallback(
+    (id: string) => {
+      const next: ReviewRow["status"] = localStatuses[id] === "published" ? "pending" : "published";
+      setLocalStatuses((prev) => ({ ...prev, [id]: next }));
+      fetcher.submit(
+        { intent: "toggle-status", id, status: next },
+        { method: "post", action: "/app/reviews" },
+      );
+    },
+    [localStatuses, fetcher],
+  );
+
   const tabs: TabProps[] = [
-    {
-      content: "All",
-      index: 0,
-      onAction: () => {},
-      id: "all-0",
-      isLocked: true,
-    },
-    {
-      content: "Published",
-      index: 1,
-      onAction: () => {},
-      id: "published-1",
-      isLocked: true,
-    },
-    {
-      content: "Pending",
-      index: 2,
-      onAction: () => {},
-      id: "pending-2",
-      isLocked: true,
-    },
-    {
-      content: "Rejected",
-      index: 3,
-      onAction: () => {},
-      id: "rejected-3",
-      isLocked: true,
-    },
+    { content: "All",       onAction: () => {}, id: "all-0",       isLocked: true },
+    { content: "Published", onAction: () => {}, id: "published-1", isLocked: true },
+    { content: "Pending",   onAction: () => {}, id: "pending-2",   isLocked: true },
+    { content: "Rejected",  onAction: () => {}, id: "rejected-3",  isLocked: true },
   ];
 
   const sortOptions: IndexFiltersProps["sortOptions"] = [
-    { label: "Date", value: "date desc", directionLabel: "Newest first" },
-    { label: "Date", value: "date asc", directionLabel: "Oldest first" },
-    { label: "Customer", value: "customer asc", directionLabel: "A-Z" },
+    { label: "Date",     value: "date desc",     directionLabel: "Newest first" },
+    { label: "Date",     value: "date asc",      directionLabel: "Oldest first" },
+    { label: "Customer", value: "customer asc",  directionLabel: "A-Z" },
     { label: "Customer", value: "customer desc", directionLabel: "Z-A" },
-    { label: "Rating", value: "rating desc", directionLabel: "Highest first" },
-    { label: "Rating", value: "rating asc", directionLabel: "Lowest first" },
+    { label: "Rating",   value: "rating desc",   directionLabel: "Highest first" },
+    { label: "Rating",   value: "rating asc",    directionLabel: "Lowest first" },
   ];
 
-  const handleRatingFilterChange = useCallback(
-    (value: string[]) => setRatingFilter(value),
-    [],
-  );
-  const handleRatingFilterRemove = useCallback(
-    () => setRatingFilter(undefined),
-    [],
-  );
-  const handleQueryChange = useCallback(
-    (value: string) => setQueryValue(value),
-    [],
-  );
+  const handleRatingFilterChange = useCallback((v: string[]) => setRatingFilter(v), []);
+  const handleRatingFilterRemove = useCallback(() => setRatingFilter(undefined), []);
+  const handleQueryChange = useCallback((v: string) => setQueryValue(v), []);
   const handleQueryClear = useCallback(() => setQueryValue(""), []);
-  const handleFiltersClearAll = useCallback(() => {
-    setRatingFilter(undefined);
-    setQueryValue("");
-  }, []);
+  const handleFiltersClearAll = useCallback(() => { setRatingFilter(undefined); setQueryValue(""); }, []);
 
   const filters = [
     {
@@ -122,13 +114,7 @@ export function ReviewsTable() {
         <ChoiceList
           title="Rating"
           titleHidden
-          choices={[
-            { label: "5 stars", value: "5" },
-            { label: "4 stars", value: "4" },
-            { label: "3 stars", value: "3" },
-            { label: "2 stars", value: "2" },
-            { label: "1 star", value: "1" },
-          ]}
+          choices={[5, 4, 3, 2, 1].map((n) => ({ label: `${n} stars`, value: String(n) }))}
           selected={ratingFilter || []}
           onChange={handleRatingFilterChange}
           allowMultiple
@@ -139,7 +125,7 @@ export function ReviewsTable() {
   ];
 
   const appliedFilters: IndexFiltersProps["appliedFilters"] = [];
-  if (ratingFilter && ratingFilter.length > 0) {
+  if (ratingFilter?.length) {
     appliedFilters.push({
       key: "rating",
       label: `Rating: ${ratingFilter.map((r) => `${r}★`).join(", ")}`,
@@ -149,111 +135,98 @@ export function ReviewsTable() {
 
   const primaryAction: IndexFiltersProps["primaryAction"] = {
     type: "save-as",
-    onAction: async (_value: string) => {
-      await sleep(1);
-      return true;
-    },
+    onAction: async () => true,
     disabled: false,
     loading: false,
   };
 
   const tabStatus = STATUS_KEYS[selected];
-  const filteredReviews = mockAllReviews
+  const filtered = reviews
     .filter((r) => tabStatus === "all" || r.status === tabStatus)
     .filter((r) => {
       if (!queryValue) return true;
       const q = queryValue.toLowerCase();
-      return (
-        r.customer.toLowerCase().includes(q) ||
-        r.product.toLowerCase().includes(q)
-      );
+      return r.customer.toLowerCase().includes(q) || r.product.toLowerCase().includes(q);
     })
-    .filter((r) => {
-      if (!ratingFilter || ratingFilter.length === 0) return true;
-      return ratingFilter.includes(String(r.rating));
-    })
+    .filter((r) => (!ratingFilter?.length) || ratingFilter.includes(String(r.rating)))
     .sort((a, b) => {
       const [field, dir] = sortSelected[0].split(" ");
-      const mult = dir === "asc" ? 1 : -1;
-      if (field === "customer") return mult * a.customer.localeCompare(b.customer);
-      if (field === "rating") return mult * (a.rating - b.rating);
-      if (field === "date")
-        return mult * (new Date(a.date).getTime() - new Date(b.date).getTime());
+      const m = dir === "asc" ? 1 : -1;
+      if (field === "customer") return m * a.customer.localeCompare(b.customer);
+      if (field === "rating")   return m * (a.rating - b.rating);
+      if (field === "date")     return m * (new Date(a.date).getTime() - new Date(b.date).getTime());
       return 0;
     });
 
-  const reviewsWithStringIds = filteredReviews.map((r) => ({
-    ...r,
-    id: String(r.id),
-  }));
-
   const resourceName = { singular: "review", plural: "reviews" };
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    useIndexResourceState(reviewsWithStringIds);
+    useIndexResourceState(filtered);
 
-  const promotedBulkActions = [
-    {
-      content: "Publish reviews",
-      onAction: () => console.log("Todo: implement bulk publish"),
-    },
-    {
-      content: "Reject reviews",
-      onAction: () => console.log("Todo: implement bulk reject"),
-    },
-  ];
+  const handleBulkPublish = () => {
+    selectedResources.forEach((id) => setLocalStatuses((p) => ({ ...p, [id]: "published" })));
+    fetcher.submit(
+      { intent: "bulk-publish", ids: JSON.stringify(selectedResources) },
+      { method: "post", action: "/app/reviews" },
+    );
+  };
 
-  const bulkActions = [
-    {
-      content: "Export selected",
-      onAction: () => console.log("Todo: implement bulk export"),
-    },
-    {
-      icon: DeleteIcon,
-      destructive: true,
-      content: "Delete reviews",
-      onAction: () => console.log("Todo: implement bulk delete"),
-    },
-  ];
+  const handleBulkReject = () => {
+    selectedResources.forEach((id) => setLocalStatuses((p) => ({ ...p, [id]: "rejected" })));
+    fetcher.submit(
+      { intent: "bulk-reject", ids: JSON.stringify(selectedResources) },
+      { method: "post", action: "/app/reviews" },
+    );
+  };
 
-  const rowMarkup = filteredReviews.map((review, index) => (
-    <IndexTable.Row
-      id={String(review.id)}
-      key={review.id}
-      selected={selectedResources.includes(String(review.id))}
-      position={index}
-    >
-      <IndexTable.Cell>
-        <InlineStack gap="200" blockAlign="center">
-          <Avatar initials={review.initials} size="sm" />
-          <Text variant="bodyMd" fontWeight="semibold" as="span">
-            {review.customer}
+  const handleBulkDelete = () => {
+    fetcher.submit(
+      { intent: "bulk-delete", ids: JSON.stringify(selectedResources) },
+      { method: "post", action: "/app/reviews" },
+    );
+  };
+
+  const { smDown } = useBreakpoints();
+
+  const rowMarkup = filtered.map((review, index) => {
+    const effectiveStatus = localStatuses[review.id] ?? review.status;
+    return (
+      <IndexTable.Row
+        id={review.id}
+        key={review.id}
+        selected={selectedResources.includes(review.id)}
+        position={index}
+      >
+        <IndexTable.Cell>
+          <InlineStack gap="200" blockAlign="center">
+            <Avatar initials={review.initials} size="sm" />
+            <Text variant="bodyMd" fontWeight="semibold" as="span">{review.customer}</Text>
+          </InlineStack>
+        </IndexTable.Cell>
+        <IndexTable.Cell>{review.product}</IndexTable.Cell>
+        <IndexTable.Cell>
+          <Text as="span" variant="bodyMd">
+            <span style={{ color: "#fbbf24" }}>{"★".repeat(review.rating)}</span>
+            <span style={{ color: "#e1e3e5" }}>{"★".repeat(5 - review.rating)}</span>
           </Text>
-        </InlineStack>
-      </IndexTable.Cell>
-      <IndexTable.Cell>{review.product}</IndexTable.Cell>
-      <IndexTable.Cell>
-        <Text as="span" variant="bodyMd">
-          {"★".repeat(review.rating)}
-          {"☆".repeat(5 - review.rating)}
-        </Text>
-      </IndexTable.Cell>
-      <IndexTable.Cell>
-        <Text as="span" variant="bodyMd" tone="subdued">
-          {review.text.length > 80
-            ? `${review.text.slice(0, 80)}…`
-            : review.text}
-        </Text>
-      </IndexTable.Cell>
-      <IndexTable.Cell>{statusBadge(review.status)}</IndexTable.Cell>
-      <IndexTable.Cell>{review.date}</IndexTable.Cell>
-      <IndexTable.Cell>
-        <s-switch
-          checked={publishedIds.has(String(review.id)) || undefined}
-          onClick={() => handleTogglePublish(String(review.id))}
-        />
-      </IndexTable.Cell>
-    </IndexTable.Row>
-  ));
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <Text as="span" variant="bodyMd" tone="subdued">
+            {review.text.length > 80 ? `${review.text.slice(0, 80)}…` : review.text}
+          </Text>
+        </IndexTable.Cell>
+        <IndexTable.Cell>{statusBadge(effectiveStatus)}</IndexTable.Cell>
+        <IndexTable.Cell>{review.date}</IndexTable.Cell>
+        <IndexTable.Cell>
+          <s-switch
+            {...({
+              checked: effectiveStatus === "published" || undefined,
+              onClick: () => handleTogglePublish(review.id),
+            } as object)}
+          />
+        </IndexTable.Cell>
+      </IndexTable.Row>
+    );
+  });
 
   return (
     <LegacyCard>
@@ -280,13 +253,16 @@ export function ReviewsTable() {
       <IndexTable
         condensed={smDown}
         resourceName={resourceName}
-        itemCount={filteredReviews.length}
-        selectedItemsCount={
-          allResourcesSelected ? "All" : selectedResources.length
-        }
+        itemCount={filtered.length}
+        selectedItemsCount={allResourcesSelected ? "All" : selectedResources.length}
         onSelectionChange={handleSelectionChange}
-        promotedBulkActions={promotedBulkActions}
-        bulkActions={bulkActions}
+        promotedBulkActions={[
+          { content: "Publish reviews", onAction: handleBulkPublish },
+          { content: "Reject reviews",  onAction: handleBulkReject },
+        ]}
+        bulkActions={[
+          { content: "Delete reviews", onAction: handleBulkDelete },
+        ]}
         headings={[
           { title: "Customer" },
           { title: "Product" },

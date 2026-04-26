@@ -1,38 +1,216 @@
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
+import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useState } from "react";
+import { useLoaderData } from "react-router";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { ReviewsTable } from "app/components/reviews/reviews-table";
-import { mockAllReviews } from "../data/mockData";
+import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal";
+import prisma from "../db.server";
+
+// ── Loader ────────────────────────────────────────────────────────────────────
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
+  const { session, admin } = await authenticate.admin(request);
+  const { shop } = session;
+
+  const [reviews, productsRes] = await Promise.all([
+    prisma.review.findMany({
+      where: { shop },
+      orderBy: { createdAt: "desc" },
+    }),
+    admin.graphql(`#graphql
+      query {
+        products(first: 250) {
+          nodes {
+            id
+            title
+            featuredImage { url }
+          }
+        }
+      }
+    `),
+  ]);
+
+  const { data } = await productsRes.json();
+  const products = (
+    data?.products?.nodes as Array<{
+      id: string;
+      title: string;
+      featuredImage: { url: string } | null;
+    }> ?? []
+  ).map((p) => ({
+    id: p.id,
+    title: p.title,
+    imageUrl: p.featuredImage?.url ?? null,
+  }));
+
+  const pendingCount = reviews.filter((r) => r.status === "pending").length;
+
+  return {
+    reviews: reviews.map((r) => ({
+      id: r.id,
+      customer: r.customerName,
+      initials: r.customerName
+        .trim()
+        .split(/\s+/)
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      rating: r.rating,
+      text: r.body,
+      product: r.productTitle,
+      date: new Date(r.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      status: r.status as "published" | "pending" | "rejected",
+      importId: r.importId,
+    })),
+    pendingCount,
+    products,
+  };
 };
 
-const pendingCount = mockAllReviews.filter((r) => r.status === "pending").length;
+// ── Action ────────────────────────────────────────────────────────────────────
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const { shop } = session;
+
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
+
+  // ── Toggle single review status ──────────────────────────────────────────────
+  if (intent === "toggle-status") {
+    const id = formData.get("id") as string;
+    const status = formData.get("status") as string;
+    await prisma.review.update({ where: { id }, data: { status } });
+    return { ok: true, intent };
+  }
+
+  // ── Bulk operations ──────────────────────────────────────────────────────────
+  if (intent === "bulk-publish") {
+    const ids = JSON.parse(formData.get("ids") as string) as string[];
+    await prisma.review.updateMany({ where: { shop, id: { in: ids } }, data: { status: "published" } });
+    return { ok: true, intent };
+  }
+
+  if (intent === "bulk-reject") {
+    const ids = JSON.parse(formData.get("ids") as string) as string[];
+    await prisma.review.updateMany({ where: { shop, id: { in: ids } }, data: { status: "rejected" } });
+    return { ok: true, intent };
+  }
+
+  if (intent === "bulk-delete") {
+    const ids = JSON.parse(formData.get("ids") as string) as string[];
+    await prisma.review.deleteMany({ where: { shop, id: { in: ids } } });
+    return { ok: true, intent };
+  }
+
+  // ── CSV import ───────────────────────────────────────────────────────────────
+  if (intent === "import") {
+    const productId = formData.get("productId") as string;
+    const productTitle = formData.get("productTitle") as string;
+    const filename = (formData.get("filename") as string) || "import.csv";
+
+    let rawRows: Array<{
+      customerName: string;
+      rating: number;
+      body: string;
+      customerEmail?: string;
+      date?: string;
+    }> = [];
+
+    try {
+      rawRows = JSON.parse(formData.get("rows") as string);
+    } catch {
+      return { ok: false, intent, error: "Could not parse import data." };
+    }
+
+    const valid: typeof rawRows = [];
+    let failed = 0;
+
+    for (const row of rawRows) {
+      const r = Number(row.rating);
+      if (!row.customerName?.trim() || !row.body?.trim() || isNaN(r) || r < 1 || r > 5) {
+        failed++;
+        continue;
+      }
+      valid.push({ ...row, rating: r });
+    }
+
+    const importRecord = await prisma.importRecord.create({
+      data: {
+        shop,
+        filename,
+        totalRows: rawRows.length,
+        succeeded: valid.length,
+        failed,
+        status: failed === 0 ? "completed" : valid.length === 0 ? "failed" : "partial",
+      },
+    });
+
+    if (valid.length > 0) {
+      await prisma.review.createMany({
+        data: valid.map((row) => ({
+          shop,
+          shopifyProductId: productId || null,
+          productTitle,
+          customerName: row.customerName.trim(),
+          customerEmail: row.customerEmail?.trim() || null,
+          rating: Number(row.rating),
+          body: row.body.trim(),
+          status: "pending",
+          source: "csv_import",
+          importId: importRecord.id,
+          ...(row.date && !isNaN(new Date(row.date).getTime())
+            ? { createdAt: new Date(row.date) }
+            : {}),
+        })),
+      });
+    }
+
+    return {
+      ok: true,
+      intent,
+      succeeded: valid.length,
+      failed,
+      total: rawRows.length,
+      importId: importRecord.id,
+    };
+  }
+
+  return { ok: false, intent: "unknown", error: "Unknown intent" };
+};
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReviewsPage() {
+  const { reviews, pendingCount, products } = useLoaderData<typeof loader>();
+  const [importOpen, setImportOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   return (
     <s-page heading="Reviews" inlineSize="large">
-      {!bannerDismissed && (
+      <s-button
+        slot="primary-action"
+        variant="primary"
+        icon="import"
+        onClick={() => setImportOpen(true)}
+      >
+        Import reviews
+      </s-button>
+
+      {pendingCount > 0 && !bannerDismissed && (
         <s-banner
-          heading={`247 reviews imported — ${pendingCount} pending approval`}
+          heading={`${pendingCount} review${pendingCount === 1 ? "" : "s"} pending approval`}
           tone="warning"
           onDismiss={() => setBannerDismissed(true)}
         >
-          These reviews were imported from your previous platform and are
-          awaiting moderation. Approve them to make them visible on your
-          storefront, or reject any that don&apos;t meet your guidelines.
-          <s-button
-            slot="secondary-actions"
-            variant="secondary"
-            onClick={() => console.log("Todo: approve all pending")}
-          >
-            Approve all
-          </s-button>
+          These reviews are awaiting moderation and won&apos;t appear on your storefront until
+          approved.
           <s-button
             slot="secondary-actions"
             variant="secondary"
@@ -42,7 +220,14 @@ export default function ReviewsPage() {
           </s-button>
         </s-banner>
       )}
-      <ReviewsTable />
+
+      <ReviewsTable reviews={reviews} />
+
+      <ImportReviewsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        products={products}
+      />
     </s-page>
   );
 }

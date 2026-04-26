@@ -10,31 +10,45 @@ import { QuickActions } from "../components/dashboard/QuickActions";
 import { TopRatedProducts } from "../components/dashboard/TopRatedProducts";
 import { LastImportSummary } from "../components/dashboard/LastImportSummary";
 import { OfferBanner } from "app/components/offer-banner";
+import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal";
 import prisma from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const { shop } = session;
 
-  const [totalReviews, ratingAgg, pendingCount, topProductsRaw, lastImportRaw, shopSettings] =
-    await Promise.all([
-      prisma.review.count({ where: { shop } }),
-      prisma.review.aggregate({ where: { shop }, _avg: { rating: true } }),
-      prisma.review.count({ where: { shop, status: "pending" } }),
-      prisma.review.groupBy({
-        by: ["productTitle"],
-        where: { shop },
-        _avg: { rating: true },
-        _count: { rating: true },
-        orderBy: { _avg: { rating: "desc" } },
-        take: 5,
-      }),
-      prisma.importRecord.findFirst({
-        where: { shop },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.shopSettings.findUnique({ where: { shop } }),
-    ]);
+  const [
+    totalReviews, ratingAgg, pendingCount,
+    topProductsRaw, lastImportRaw, shopSettings,
+    productsRes,
+  ] = await Promise.all([
+    prisma.review.count({ where: { shop } }),
+    prisma.review.aggregate({ where: { shop }, _avg: { rating: true } }),
+    prisma.review.count({ where: { shop, status: "pending" } }),
+    prisma.review.groupBy({
+      by: ["productTitle"],
+      where: { shop },
+      _avg: { rating: true },
+      _count: { rating: true },
+      orderBy: { _avg: { rating: "desc" } },
+      take: 5,
+    }),
+    prisma.importRecord.findFirst({
+      where: { shop },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.shopSettings.findUnique({ where: { shop } }),
+    admin.graphql(`#graphql
+      query { products(first: 250) { nodes { id title featuredImage { url } } } }
+    `),
+  ]);
+
+  const { data } = await productsRes.json();
+  const products = (
+    data?.products?.nodes as Array<{
+      id: string; title: string; featuredImage: { url: string } | null;
+    }> ?? []
+  ).map((p) => ({ id: p.id, title: p.title, imageUrl: p.featuredImage?.url ?? null }));
 
   const stats = {
     totalReviews,
@@ -67,6 +81,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     stats,
     topProducts,
     lastImport,
+    products,
     setupState: {
       embedActivated: shopSettings?.embedActivated ?? false,
       reviewsImported: shopSettings?.reviewsImported ?? false,
@@ -76,7 +91,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Index() {
-  const { shop, stats, topProducts, lastImport, setupState } =
+  const { shop, stats, topProducts, lastImport, products, setupState } =
     useLoaderData<typeof loader>();
   const shopify = useAppBridge();
 
@@ -86,6 +101,7 @@ export default function Index() {
   const [reviewConfirmedWorking, setReviewConfirmedWorking] = useState(
     setupState.confirmedWorking,
   );
+  const [importOpen, setImportOpen] = useState(false);
 
   const handleOpenThemeSettings = () => {
     window.open(
@@ -98,17 +114,17 @@ export default function Index() {
     shopify.toast.show("Send Review Request — coming soon!");
   };
 
-  const handleImportReviews = () => {
-    shopify.toast.show("Import Reviews — coming soon!");
-  };
-
   const handleCustomizeWidget = () => {
     shopify.toast.show("Customize Widget — coming soon!");
   };
 
   return (
     <s-page heading="Edge Reviews">
-      <s-button icon="import" slot="primary-action">
+      <s-button
+        icon="import"
+        slot="primary-action"
+        onClick={() => setImportOpen(true)}
+      >
         Import reviews
       </s-button>
       <OfferBanner />
@@ -121,7 +137,7 @@ export default function Index() {
             onDismiss={() => setSetupDismissed(true)}
             onOpenThemeSettings={handleOpenThemeSettings}
             onMarkEmbedDone={() => setEmbedActivated(true)}
-            onImportReviews={() => setReviewsImported(true)}
+            onImportReviews={() => setImportOpen(true)}
             onMarkConfirmedWorking={() => setReviewConfirmedWorking(true)}
           />
         )}
@@ -129,7 +145,7 @@ export default function Index() {
         <StatsRow stats={stats} />
 
         <QuickActions
-          onImportReviews={handleImportReviews}
+          onImportReviews={() => setImportOpen(true)}
           onCustomizeWidget={handleCustomizeWidget}
           onSendReviewRequest={handleSendReviewRequest}
         />
@@ -138,10 +154,16 @@ export default function Index() {
           <TopRatedProducts products={topProducts} />
           <LastImportSummary
             lastImport={lastImport}
-            onImportReviews={handleImportReviews}
+            onImportReviews={() => setImportOpen(true)}
           />
         </s-grid>
       </s-stack>
+
+      <ImportReviewsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        products={products}
+      />
     </s-page>
   );
 }
