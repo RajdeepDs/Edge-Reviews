@@ -285,7 +285,6 @@ export function ReviewsTable() {
           allResourcesSelected ? "All" : selectedResources.length
         }
         onSelectionChange={handleSelectionChange}
-        hasMoreItems
         promotedBulkActions={promotedBulkActions}
         bulkActions={bulkActions}
         headings={[
@@ -297,10 +296,6 @@ export function ReviewsTable() {
           { title: "Date" },
           { title: "Published" },
         ]}
-        pagination={{
-          hasNext: true,
-          onNext: () => {},
-        }}
       >
         {rowMarkup}
       </IndexTable>

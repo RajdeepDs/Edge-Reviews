@@ -11,8 +11,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function ProductsPage() {
   return (
     <s-page heading="Products" inlineSize="large">
-      <s-button slot="primary-action" variant="primary" icon="plus">
-        Add product
+      <s-button slot="primary-action" variant="primary" icon="import">
+        Import Reviews for Product
       </s-button>
       <ProductsList />
     </s-page>
