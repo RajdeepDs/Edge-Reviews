@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useFetcher } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -96,14 +96,43 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const { shop } = session;
+
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
+
+  if (intent === "mark-embed-done") {
+    await prisma.shopSettings.upsert({
+      where: { shop },
+      update: { embedActivated: true },
+      create: { shop, embedActivated: true },
+    });
+    return { ok: true };
+  }
+
+  if (intent === "mark-confirmed-working") {
+    await prisma.shopSettings.upsert({
+      where: { shop },
+      update: { confirmedWorking: true },
+      create: { shop, confirmedWorking: true },
+    });
+    return { ok: true };
+  }
+
+  return { ok: false };
+};
+
 export default function Index() {
   const { shop, stats, topProducts, lastImport, products, setupState } =
     useLoaderData<typeof loader>();
   const shopify = useAppBridge();
+  const settingsFetcher = useFetcher();
 
   const [setupDismissed, setSetupDismissed] = useState(false);
   const [embedActivated, setEmbedActivated] = useState(setupState.embedActivated);
-  const [reviewsImported, setReviewsImported] = useState(setupState.reviewsImported);
+  const [reviewsImported] = useState(setupState.reviewsImported);
   const [reviewConfirmedWorking, setReviewConfirmedWorking] = useState(
     setupState.confirmedWorking,
   );
@@ -114,6 +143,16 @@ export default function Index() {
       `https://${shop}/admin/themes/current/editor?context=apps`,
       "_blank",
     );
+  };
+
+  const handleMarkEmbedDone = () => {
+    setEmbedActivated(true);
+    settingsFetcher.submit({ intent: "mark-embed-done" }, { method: "post" });
+  };
+
+  const handleMarkConfirmedWorking = () => {
+    setReviewConfirmedWorking(true);
+    settingsFetcher.submit({ intent: "mark-confirmed-working" }, { method: "post" });
   };
 
   const handleCustomizeWidget = () => {
@@ -138,9 +177,9 @@ export default function Index() {
             reviewConfirmedWorking={reviewConfirmedWorking}
             onDismiss={() => setSetupDismissed(true)}
             onOpenThemeSettings={handleOpenThemeSettings}
-            onMarkEmbedDone={() => setEmbedActivated(true)}
+            onMarkEmbedDone={handleMarkEmbedDone}
             onImportReviews={() => setImportOpen(true)}
-            onMarkConfirmedWorking={() => setReviewConfirmedWorking(true)}
+            onMarkConfirmedWorking={handleMarkConfirmedWorking}
           />
         )}
 

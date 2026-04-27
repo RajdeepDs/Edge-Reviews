@@ -157,25 +157,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
 
     if (valid.length > 0) {
-      await prisma.review.createMany({
-        data: valid.map((row) => ({
-          shop,
-          shopifyProductId: productId || null,
-          productTitle,
-          customerName: row.customerName.trim(),
-          customerEmail: row.customerEmail?.trim() || null,
-          rating: Number(row.rating),
-          title: row.title?.trim() || null,
-          body: row.body.trim(),
-          imageUrl: row.imageUrl?.trim() || null,
-          status: "pending",
-          source: "csv_import",
-          importId: importRecord.id,
-          ...(row.date && !isNaN(new Date(row.date).getTime())
-            ? { createdAt: new Date(row.date) }
-            : {}),
-        })),
-      });
+      await Promise.all([
+        prisma.review.createMany({
+          data: valid.map((row) => ({
+            shop,
+            shopifyProductId: productId || null,
+            productTitle,
+            customerName: row.customerName.trim(),
+            customerEmail: row.customerEmail?.trim() || null,
+            rating: Number(row.rating),
+            title: row.title?.trim() || null,
+            body: row.body.trim(),
+            imageUrl: row.imageUrl?.trim() || null,
+            status: "pending",
+            source: "csv_import",
+            importId: importRecord.id,
+            ...(row.date && !isNaN(new Date(row.date).getTime())
+              ? { createdAt: new Date(row.date) }
+              : {}),
+          })),
+        }),
+        prisma.shopSettings.upsert({
+          where: { shop },
+          update: { reviewsImported: true },
+          create: { shop, reviewsImported: true },
+        }),
+      ]);
     }
 
     return {
