@@ -1,4 +1,8 @@
-import type { FunnelStep } from "../../data/mockData";
+interface FunnelStep {
+  label: string;
+  count: number;
+  color: string;
+}
 
 interface RequestFunnelProps {
   steps: FunnelStep[];

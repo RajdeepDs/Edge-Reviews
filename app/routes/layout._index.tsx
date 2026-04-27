@@ -58,13 +58,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     pendingReviews: pendingCount,
   };
 
-  const topProducts = topProductsRaw.map((p, i) => ({
-    id: i + 1,
-    name: p.productTitle,
-    emoji: "📦",
-    avgRating: p._avg.rating ?? 0,
-    reviewCount: p._count.rating,
-  }));
+  const topProducts = topProductsRaw.map((p, i) => {
+    const match = products.find(
+      (prod) => prod.title.toLowerCase() === p.productTitle?.toLowerCase(),
+    );
+    return {
+      id: i + 1,
+      name: p.productTitle,
+      emoji: "📦",
+      imageUrl: match?.imageUrl ?? null,
+      avgRating: p._avg.rating ?? 0,
+      reviewCount: p._count.rating,
+    };
+  });
 
   const lastImport = lastImportRaw
     ? {

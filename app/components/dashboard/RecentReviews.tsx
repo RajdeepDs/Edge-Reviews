@@ -1,4 +1,13 @@
-import type { Review } from "../../data/mockData";
+interface Review {
+  id: number | string;
+  customer: string;
+  initials: string;
+  rating: number;
+  text: string;
+  product: string;
+  date: string;
+  status?: string;
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (

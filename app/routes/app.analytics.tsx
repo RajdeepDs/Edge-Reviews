@@ -1,9 +1,11 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
+import { useState } from "react";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AnalyticsFilterBar } from "../components/dashboard/AnalyticsFilterBar";
 import { StatsRow } from "../components/dashboard/StatsRow";
+import { ImportReviewsModal } from "../components/reviews/import-reviews-modal";
 import prisma from "../db.server";
 
 const RATING_COLORS: Record<number, string> = {
@@ -20,36 +22,35 @@ function parseDateRange(url: URL): { fromDate: Date; toDate: Date } {
   const toDate = to ? new Date(to + "T23:59:59.999Z") : new Date();
   const fromDate = from
     ? new Date(from + "T00:00:00.000Z")
-    : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+    : new Date("2000-01-01T00:00:00.000Z");
   return { fromDate, toDate };
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const { shop } = session;
 
   const { fromDate, toDate } = parseDateRange(new URL(request.url));
   const dateFilter = { gte: fromDate, lte: toDate };
 
   const [
-    totalReviews,
-    ratingAgg,
+    totalReviewsAllTime,
+    avgRatingAllTime,
     pendingCount,
     ratingDistributionRaw,
     monthlyRaw,
     topProductsRaw,
     importHistory,
+    productsRes,
   ] = await Promise.all([
-    prisma.review.count({ where: { shop, createdAt: dateFilter } }),
-
-    prisma.review.aggregate({
-      where: { shop, createdAt: dateFilter },
-      _avg: { rating: true },
-    }),
+    // All-time counts — used for KPI cards and empty-state gating
+    prisma.review.count({ where: { shop } }),
+    prisma.review.aggregate({ where: { shop }, _avg: { rating: true } }),
 
     // Pending is always across all time — it's a moderation queue
     prisma.review.count({ where: { shop, status: "pending" } }),
 
+    // Date-filtered charts
     prisma.review.groupBy({
       by: ["rating"],
       where: { shop, createdAt: dateFilter },
@@ -68,9 +69,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ORDER BY DATE_TRUNC('month', "createdAt") ASC
     `,
 
+    // Top products is an all-time leaderboard, not time-series
     prisma.review.groupBy({
       by: ["productTitle"],
-      where: { shop, createdAt: dateFilter },
+      where: { shop },
       _avg: { rating: true },
       _count: { id: true },
       orderBy: { _avg: { rating: "desc" } },
@@ -81,11 +83,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       where: { shop },
       orderBy: { createdAt: "desc" },
     }),
+
+    admin.graphql(`#graphql
+      query { products(first: 250) { nodes { id title featuredImage { url } } } }
+    `),
   ]);
 
+  const { data } = await productsRes.json();
+  const products = (
+    data?.products?.nodes as Array<{
+      id: string; title: string; featuredImage: { url: string } | null;
+    }> ?? []
+  ).map((p) => ({ id: p.id, title: p.title, imageUrl: p.featuredImage?.url ?? null }));
+
   const stats = {
-    totalReviews,
-    averageRating: ratingAgg._avg.rating ?? 0,
+    totalReviews: totalReviewsAllTime,
+    averageRating: avgRatingAllTime._avg.rating ?? 0,
     requestsSent: 0,
     conversionRate: 0,
     pendingReviews: pendingCount,
@@ -125,18 +138,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return {
     stats,
+    totalReviewsAllTime,
     ratingDistribution,
     monthlyReviews,
     topProducts,
     importHistory: importHistoryData,
+    products,
   };
 };
 
 export default function AnalyticsPage() {
-  const { stats, ratingDistribution, monthlyReviews, topProducts, importHistory } =
+  const { stats, totalReviewsAllTime, ratingDistribution, monthlyReviews, topProducts, importHistory, products } =
     useLoaderData<typeof loader>();
 
-  const hasReviewData = stats.totalReviews > 0;
+  const [importOpen, setImportOpen] = useState(false);
+
+  const hasReviewData = totalReviewsAllTime > 0;
   const hasImportHistory = importHistory.length > 0;
 
   const maxRatingCount = Math.max(...ratingDistribution.map((r) => r.count), 1);
@@ -313,12 +330,12 @@ export default function AnalyticsPage() {
                 <s-heading>No analytics yet</s-heading>
                 <s-text color="subdued">Import your first reviews to see charts, ratings, and product insights here.</s-text>
               </s-stack>
-              <Link
-                to="/app"
-                style={{ padding: "8px 20px", background: "#1a1a1a", color: "#fff", borderRadius: "8px", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}
+              <button
+                onClick={() => setImportOpen(true)}
+                style={{ padding: "8px 20px", background: "#1a1a1a", color: "#fff", borderRadius: "8px", fontSize: "13px", fontWeight: 600, border: "none", cursor: "pointer" }}
               >
                 Import reviews
-              </Link>
+              </button>
             </div>
           </s-section>
         )}
@@ -390,6 +407,12 @@ export default function AnalyticsPage() {
         </s-section>
 
       </s-stack>
+
+      <ImportReviewsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        products={products}
+      />
     </s-page>
   );
 }

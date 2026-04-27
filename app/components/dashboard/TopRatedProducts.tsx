@@ -1,4 +1,11 @@
-import type { TopProduct } from "../../data/mockData";
+interface TopProduct {
+  id: number;
+  name: string;
+  emoji: string;
+  imageUrl?: string | null;
+  avgRating: number;
+  reviewCount: number;
+}
 
 function Stars({ rating }: { rating: number }) {
   const full = Math.floor(rating);
@@ -49,9 +56,18 @@ export function TopRatedProducts({ products }: TopRatedProductsProps) {
                   justifyContent: "center",
                   fontSize: "20px",
                   flexShrink: 0,
+                  overflow: "hidden",
                 }}
               >
-                {product.emoji}
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  product.emoji
+                )}
               </div>
 
               <div style={{ minWidth: 0 }}>

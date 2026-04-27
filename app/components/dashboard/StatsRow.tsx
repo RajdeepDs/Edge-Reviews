@@ -1,5 +1,12 @@
 import { Link } from "react-router";
-import type { DashboardStats } from "../../data/mockData";
+
+interface DashboardStats {
+  totalReviews: number;
+  averageRating: number;
+  requestsSent: number;
+  conversionRate: number;
+  pendingReviews: number;
+}
 
 interface StatsRowProps {
   stats: DashboardStats;

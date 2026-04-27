@@ -3,10 +3,11 @@ import { useSearchParams } from "react-router";
 import { DatePicker, OptionList } from "@shopify/polaris";
 
 const PRESETS = [
+  { value: "all_time", label: "All time" },
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
   { value: "last_7d", label: "Last 7d" },
-  { value: "last_30d", label: "Last 30d" },
+  { value: "all_time", label: "Last 30d" },
   { value: "last_90d", label: "Last 90d" },
   { value: "last_365d", label: "Last 365d" },
   { value: "last_month", label: "Last month" },
@@ -29,7 +30,7 @@ function computeRange(key: string): { from: string; to: string } {
       const d = new Date(now); d.setDate(d.getDate() - 7);
       return { from: fmt(d), to: fmt(now) };
     }
-    case "last_30d": {
+    case "all_time": {
       const d = new Date(now); d.setDate(d.getDate() - 30);
       return { from: fmt(d), to: fmt(now) };
     }
@@ -54,14 +55,16 @@ function computeRange(key: string): { from: string; to: string } {
       const y = now.getFullYear() - 1;
       return { from: `${y}-01-01`, to: `${y}-12-31` };
     }
+    case "all_time":
+      return { from: "2000-01-01", to: fmt(now) };
     default:
-      return computeRange("last_30d");
+      return computeRange("all_time");
   }
 }
 
 export function AnalyticsFilterBar() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const appliedPreset = searchParams.get("preset") || "last_30d";
+  const appliedPreset = searchParams.get("preset") || "all_time";
 
   const [pendingPreset, setPendingPreset] = useState(appliedPreset);
   const [pendingRange, setPendingRange] = useState(() => {
@@ -92,7 +95,7 @@ export function AnalyticsFilterBar() {
       if ((e as ToggleEvent).newState === "open") {
         const f = searchParams.get("from");
         const t = searchParams.get("to");
-        const preset = searchParams.get("preset") || "last_30d";
+        const preset = searchParams.get("preset") || "all_time";
         const range = f && t ? { from: f, to: t } : computeRange(preset);
         setPendingPreset(preset);
         setPendingRange(range);
@@ -137,7 +140,7 @@ export function AnalyticsFilterBar() {
   const buttonLabel =
     appliedPreset === "custom"
       ? `${searchParams.get("from")} – ${searchParams.get("to")}`
-      : PRESETS.find((p) => p.value === appliedPreset)?.label || "Last 30d";
+      : PRESETS.find((p) => p.value === appliedPreset)?.label || "All time";
 
   return (
     <s-stack direction="inline" justifyContent="space-between" alignItems="center">

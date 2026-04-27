@@ -1,5 +1,12 @@
 import { Link } from "react-router";
-import type { LastImport } from "../../data/mockData";
+
+interface LastImport {
+  date: string;
+  totalRows: number;
+  succeeded: number;
+  failed: number;
+  importId: string;
+}
 
 interface LastImportSummaryProps {
   lastImport: LastImport | null;
