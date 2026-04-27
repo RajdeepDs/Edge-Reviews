@@ -68,6 +68,37 @@ model ImportRecord {
   @@index([shop])
 }
 
+model WidgetConfig {
+  shop  String  @id
+
+  // Fan Carousel
+  fanTitle          String  @default("From our customers")
+  fanShowRating     Boolean @default(true)
+  fanShowName       Boolean @default(true)
+  fanShowBadge      Boolean @default(true)
+  fanAccentColor    String  @default("#ffffff")
+
+  // Card Carousel
+  cardTitle         String  @default("What our customers say")
+  cardShowRating    Boolean @default(true)
+  cardShowName      Boolean @default(true)
+  cardShowBadge     Boolean @default(true)
+  cardShowProduct   Boolean @default(true)
+  cardMaxChars      Int     @default(120)
+  cardAccentColor   String  @default("#000000")
+
+  // Masonry Grid
+  masonryTitle      String  @default("From our customers")
+  masonryColumns    Int     @default(4)
+  masonryShowRating Boolean @default(true)
+  masonryShowName   Boolean @default(true)
+  masonryShowBadge  Boolean @default(true)
+  masonryTileColor  String  @default("#8fad88")
+  masonryAccentColor String @default("#000000")
+
+  updatedAt DateTime @updatedAt
+}
+
 model ShopSettings {
   shop             String   @id
   embedActivated   Boolean  @default(false)
