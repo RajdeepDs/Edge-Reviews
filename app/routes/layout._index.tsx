@@ -18,13 +18,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { shop } = session;
 
   const [
-    totalReviews, ratingAgg, pendingCount,
+    totalReviews, ratingAgg, pendingCount, publishedCount,
     topProductsRaw, lastImportRaw, shopSettings,
     productsRes,
   ] = await Promise.all([
     prisma.review.count({ where: { shop } }),
     prisma.review.aggregate({ where: { shop }, _avg: { rating: true } }),
     prisma.review.count({ where: { shop, status: "pending" } }),
+    prisma.review.count({ where: { shop, status: "published" } }),
     prisma.review.groupBy({
       by: ["productTitle"],
       where: { shop },
@@ -53,8 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const stats = {
     totalReviews,
     averageRating: ratingAgg._avg.rating ?? 0,
-    requestsSent: 0,
-    conversionRate: 0,
+    publishedReviews: publishedCount,
     pendingReviews: pendingCount,
   };
 

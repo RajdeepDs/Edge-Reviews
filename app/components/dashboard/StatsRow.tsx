@@ -3,8 +3,7 @@ import { Link } from "react-router";
 interface DashboardStats {
   totalReviews: number;
   averageRating: number;
-  requestsSent: number;
-  conversionRate: number;
+  publishedReviews: number;
   pendingReviews: number;
 }
 
@@ -25,9 +24,9 @@ export function StatsRow({ stats }: StatsRowProps) {
       sub: "Out of 5.0",
     },
     {
-      label: "Requests Sent",
-      value: stats.requestsSent > 0 ? stats.requestsSent.toLocaleString() : "—",
-      sub: "This month",
+      label: "Published Reviews",
+      value: stats.publishedReviews > 0 ? stats.publishedReviews.toLocaleString() : "—",
+      sub: "Live on storefront",
     },
   ];
 

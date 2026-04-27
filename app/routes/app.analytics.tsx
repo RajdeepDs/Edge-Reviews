@@ -37,6 +37,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     totalReviewsAllTime,
     avgRatingAllTime,
     pendingCount,
+    publishedCount,
     ratingDistributionRaw,
     monthlyRaw,
     topProductsRaw,
@@ -49,6 +50,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     // Pending is always across all time — it's a moderation queue
     prisma.review.count({ where: { shop, status: "pending" } }),
+    prisma.review.count({ where: { shop, status: "published" } }),
 
     // Date-filtered charts
     prisma.review.groupBy({
@@ -99,8 +101,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const stats = {
     totalReviews: totalReviewsAllTime,
     averageRating: avgRatingAllTime._avg.rating ?? 0,
-    requestsSent: 0,
-    conversionRate: 0,
+    publishedReviews: publishedCount,
     pendingReviews: pendingCount,
   };
 
