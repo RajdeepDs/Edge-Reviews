@@ -220,7 +220,10 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
           <s-switch
             {...({
               checked: effectiveStatus === "published" || undefined,
-              onClick: () => handleTogglePublish(review.id),
+              onClick: (e: Event) => {
+                e.stopPropagation();
+                handleTogglePublish(review.id);
+              },
             } as object)}
           />
         </IndexTable.Cell>
