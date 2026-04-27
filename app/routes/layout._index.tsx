@@ -116,10 +116,6 @@ export default function Index() {
     );
   };
 
-  const handleSendReviewRequest = () => {
-    shopify.toast.show("Send Review Request — coming soon!");
-  };
-
   const handleCustomizeWidget = () => {
     shopify.toast.show("Customize Widget — coming soon!");
   };
@@ -153,7 +149,6 @@ export default function Index() {
         <QuickActions
           onImportReviews={() => setImportOpen(true)}
           onCustomizeWidget={handleCustomizeWidget}
-          onSendReviewRequest={handleSendReviewRequest}
         />
 
         <s-grid gridTemplateColumns="3fr 2fr" gap="base">

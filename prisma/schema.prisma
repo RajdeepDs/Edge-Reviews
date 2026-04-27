@@ -41,8 +41,10 @@ model Review {
   customerName     String
   customerEmail    String?
   rating           Int
+  title            String?
   body             String
   status           String   @default("pending")
+  imageUrl         String?
   source           String?
   importId         String?
   createdAt        DateTime @default(now())

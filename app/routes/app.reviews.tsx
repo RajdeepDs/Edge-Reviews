@@ -57,6 +57,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         .join("")
         .slice(0, 2)
         .toUpperCase(),
+      title: r.title ?? null,
       rating: r.rating,
       text: r.body,
       product: r.productTitle,
@@ -67,6 +68,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }),
       status: r.status as "published" | "pending" | "rejected",
       importId: r.importId,
+      imageUrl: r.imageUrl ?? null,
     })),
     pendingCount,
     products,
@@ -118,9 +120,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     let rawRows: Array<{
       customerName: string;
       rating: number;
+      title?: string;
       body: string;
       customerEmail?: string;
       date?: string;
+      imageUrl?: string;
     }> = [];
 
     try {
@@ -161,7 +165,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           customerName: row.customerName.trim(),
           customerEmail: row.customerEmail?.trim() || null,
           rating: Number(row.rating),
+          title: row.title?.trim() || null,
           body: row.body.trim(),
+          imageUrl: row.imageUrl?.trim() || null,
           status: "pending",
           source: "csv_import",
           importId: importRecord.id,

@@ -25,9 +25,11 @@ export type ImportProduct = {
 type Mapping = {
   customerName: string;
   rating: string;
+  title: string;
   body: string;
   customerEmail: string;
   date: string;
+  imageUrl: string;
 };
 
 type CsvData = { headers: string[]; rows: string[][] };
@@ -73,9 +75,11 @@ function autoDetect(headers: string[]): Partial<Mapping> {
   return {
     customerName: find("name", "customer", "author", "reviewer", "fullname", "user"),
     rating: find("rating", "star", "score", "stars", "rate"),
+    title: find("title", "subject", "headline", "summary"),
     body: find("body", "review", "text", "comment", "content", "message", "description"),
     customerEmail: find("email", "mail"),
     date: find("date", "createdat", "created", "timestamp"),
+    imageUrl: find("image", "imageurl", "photo", "picture", "avatar", "img"),
   };
 }
 
@@ -188,7 +192,7 @@ function FieldRow({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const EMPTY_MAPPING: Mapping = { customerName: "", rating: "", body: "", customerEmail: "", date: "" };
+const EMPTY_MAPPING: Mapping = { customerName: "", rating: "", title: "", body: "", customerEmail: "", date: "", imageUrl: "" };
 
 export function ImportReviewsModal({ open, onClose, products }: Props) {
   const navigate = useNavigate();
@@ -236,9 +240,11 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
         setMapping({
           customerName: detected.customerName ?? "",
           rating: detected.rating ?? "",
+          title: detected.title ?? "",
           body: detected.body ?? "",
           customerEmail: detected.customerEmail ?? "",
           date: detected.date ?? "",
+          imageUrl: detected.imageUrl ?? "",
         });
       };
       reader.readAsText(file);
@@ -256,8 +262,10 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
         customerName: row[idx(mapping.customerName)] ?? "",
         rating: Number(row[idx(mapping.rating)] ?? 0),
         body: row[idx(mapping.body)] ?? "",
+        ...(mapping.title ? { title: row[idx(mapping.title)] ?? "" } : {}),
         ...(mapping.customerEmail ? { customerEmail: row[idx(mapping.customerEmail)] ?? "" } : {}),
         ...(mapping.date ? { date: row[idx(mapping.date)] ?? "" } : {}),
+        ...(mapping.imageUrl ? { imageUrl: row[idx(mapping.imageUrl)] ?? "" } : {}),
       }));
 
     const fd = new FormData();
@@ -514,8 +522,10 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
       </div>
       <Divider />
 
+      <FieldRow label="Review Title"   description="Short headline for the review"           options={colOptional} value={mapping.title}         onChange={setField("title")}         sample={sampleFor(mapping.title)} />
       <FieldRow label="Customer Email" description="Reviewer's email address"                options={colOptional} value={mapping.customerEmail} onChange={setField("customerEmail")} sample={sampleFor(mapping.customerEmail)} />
-      <FieldRow label="Review Date"    description="When the review was written"              options={colOptional} value={mapping.date}          onChange={setField("date")}          sample={sampleFor(mapping.date)} />
+      <FieldRow label="Review Date"    description="When the review was written"             options={colOptional} value={mapping.date}          onChange={setField("date")}          sample={sampleFor(mapping.date)} />
+      <FieldRow label="Review Image"   description="URL of an image attached to the review"  options={colOptional} value={mapping.imageUrl}      onChange={setField("imageUrl")}      sample={sampleFor(mapping.imageUrl)} />
 
       {/* Row estimate */}
       {csvData && (

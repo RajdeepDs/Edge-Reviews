@@ -8,10 +8,8 @@ import {
   ChoiceList,
   Badge,
   useBreakpoints,
-  Avatar,
-  InlineStack,
+  Pagination,
 } from "@shopify/polaris";
-import { DeleteIcon } from "@shopify/polaris-icons";
 import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { useFetcher, useSearchParams } from "react-router";
@@ -22,21 +20,26 @@ export type ReviewRow = {
   id: string;
   customer: string;
   initials: string;
+  title: string | null;
   rating: number;
   text: string;
   product: string;
   date: string;
   status: "published" | "pending" | "rejected";
   importId: string | null;
+  imageUrl: string | null;
 };
 
 interface ReviewsTableProps {
   reviews: ReviewRow[];
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 25;
 const STATUS_KEYS = ["all", "published", "pending", "rejected"] as const;
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function statusBadge(status: string) {
   switch (status) {
@@ -46,6 +49,7 @@ function statusBadge(status: string) {
     default:          return null;
   }
 }
+
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -65,6 +69,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
   const [queryValue, setQueryValue] = useState("");
   const [ratingFilter, setRatingFilter] = useState<string[] | undefined>(undefined);
   const [sortSelected, setSortSelected] = useState(["date desc"]);
+  const [page, setPage] = useState(1);
   const { mode, setMode } = useSetIndexFiltersMode();
 
   // Optimistic local statuses — seeded from DB, updated immediately on toggle
@@ -84,6 +89,8 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
     [localStatuses, fetcher],
   );
 
+  const handleTabSelect = useCallback((tab: number) => { setSelected(tab); setPage(1); }, []);
+
   const tabs: TabProps[] = [
     { content: "All",       onAction: () => {}, id: "all-0",       isLocked: true },
     { content: "Published", onAction: () => {}, id: "published-1", isLocked: true },
@@ -100,11 +107,12 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
     { label: "Rating",   value: "rating asc",    directionLabel: "Lowest first" },
   ];
 
-  const handleRatingFilterChange = useCallback((v: string[]) => setRatingFilter(v), []);
-  const handleRatingFilterRemove = useCallback(() => setRatingFilter(undefined), []);
-  const handleQueryChange = useCallback((v: string) => setQueryValue(v), []);
-  const handleQueryClear = useCallback(() => setQueryValue(""), []);
-  const handleFiltersClearAll = useCallback(() => { setRatingFilter(undefined); setQueryValue(""); }, []);
+  const handleRatingFilterChange = useCallback((v: string[]) => { setRatingFilter(v); setPage(1); }, []);
+  const handleRatingFilterRemove = useCallback(() => { setRatingFilter(undefined); setPage(1); }, []);
+  const handleQueryChange = useCallback((v: string) => { setQueryValue(v); setPage(1); }, []);
+  const handleQueryClear = useCallback(() => { setQueryValue(""); setPage(1); }, []);
+  const handleSortChange = useCallback((v: string[]) => { setSortSelected(v); setPage(1); }, []);
+  const handleFiltersClearAll = useCallback(() => { setRatingFilter(undefined); setQueryValue(""); setPage(1); }, []);
 
   const filters = [
     {
@@ -158,6 +166,10 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
       return 0;
     });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const resourceName = { singular: "review", plural: "reviews" };
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(filtered);
@@ -187,33 +199,44 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
 
   const { smDown } = useBreakpoints();
 
-  const rowMarkup = filtered.map((review, index) => {
+  const rowMarkup = paginated.map((review, index) => {
     const effectiveStatus = localStatuses[review.id] ?? review.status;
     return (
       <IndexTable.Row
         id={review.id}
         key={review.id}
         selected={selectedResources.includes(review.id)}
-        position={index}
+        position={(safePage - 1) * PAGE_SIZE + index}
       >
         <IndexTable.Cell>
-          <InlineStack gap="200" blockAlign="center">
-            <Avatar initials={review.initials} size="sm" />
-            <Text variant="bodyMd" fontWeight="semibold" as="span">{review.customer}</Text>
-          </InlineStack>
+          <div style={{ width: 40, height: 40, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+            <s-thumbnail
+              {...({
+                alt: review.imageUrl ? review.customer : "No image available",
+                size: "small",
+                ...(review.imageUrl ? { src: review.imageUrl } : {}),
+                style: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
+              } as object)}
+            />
+          </div>
         </IndexTable.Cell>
-        <IndexTable.Cell>{review.product}</IndexTable.Cell>
+        <IndexTable.Cell>
+          <div>
+            <Text as="p" variant="bodyMd" fontWeight="semibold">
+              {review.title ?? "—"}
+            </Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              {review.text.length > 80 ? `${review.text.slice(0, 80)}…` : review.text}
+            </Text>
+          </div>
+        </IndexTable.Cell>
         <IndexTable.Cell>
           <Text as="span" variant="bodyMd">
             <span style={{ color: "#fbbf24" }}>{"★".repeat(review.rating)}</span>
             <span style={{ color: "#e1e3e5" }}>{"★".repeat(5 - review.rating)}</span>
           </Text>
         </IndexTable.Cell>
-        <IndexTable.Cell>
-          <Text as="span" variant="bodyMd" tone="subdued">
-            {review.text.length > 80 ? `${review.text.slice(0, 80)}…` : review.text}
-          </Text>
-        </IndexTable.Cell>
+        <IndexTable.Cell>{review.product}</IndexTable.Cell>
         <IndexTable.Cell>{statusBadge(effectiveStatus)}</IndexTable.Cell>
         <IndexTable.Cell>{review.date}</IndexTable.Cell>
         <IndexTable.Cell>
@@ -240,12 +263,12 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
         queryPlaceholder="Search by customer or product"
         onQueryChange={handleQueryChange}
         onQueryClear={handleQueryClear}
-        onSort={setSortSelected}
+        onSort={handleSortChange}
         primaryAction={primaryAction}
         cancelAction={{ onAction: () => {}, disabled: false, loading: false }}
         tabs={tabs}
         selected={selected}
-        onSelect={setSelected}
+        onSelect={handleTabSelect}
         canCreateNewView={false}
         filters={filters}
         appliedFilters={appliedFilters}
@@ -267,10 +290,10 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
           { content: "Delete reviews", onAction: handleBulkDelete },
         ]}
         headings={[
-          { title: "Customer" },
-          { title: "Product" },
-          { title: "Rating" },
+          { title: "" },
           { title: "Review" },
+          { title: "Rating" },
+          { title: "Product" },
           { title: "Status" },
           { title: "Date" },
           { title: "Published" },
@@ -278,6 +301,17 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
       >
         {rowMarkup}
       </IndexTable>
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", padding: "16px" }}>
+          <Pagination
+            hasPrevious={safePage > 1}
+            onPrevious={() => setPage((p) => p - 1)}
+            hasNext={safePage < totalPages}
+            onNext={() => setPage((p) => p + 1)}
+            label={`${safePage} / ${totalPages}`}
+          />
+        </div>
+      )}
     </LegacyCard>
   );
 }
