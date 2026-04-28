@@ -40,6 +40,32 @@
   padding: 28px 16px;
 }
 
+.er-shell {
+  width: 100%;
+}
+
+.er-shell__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.er-shell__title {
+  width: clamp(160px, 22vw, 260px);
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0.10), rgba(15, 23, 42, 0.06));
+  background-size: 200% 100%;
+  animation: erShimmer 1.2s ease-in-out infinite;
+}
+
+.er-shell__meta {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
 .er-live {
   position: absolute;
   left: -9999px;
@@ -631,6 +657,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 16px;
+  width: 100%;
 }
 
 @media (max-width: 1024px) {
