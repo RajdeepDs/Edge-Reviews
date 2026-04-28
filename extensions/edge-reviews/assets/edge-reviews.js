@@ -403,11 +403,138 @@
     sync();
   }
 
+  function truncate(s, max) {
+    const t = String(s || "");
+    if (!max || t.length <= max) return t;
+    const cut = t.slice(0, max);
+    const lastSpace = cut.lastIndexOf(" ");
+    return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim() + "…";
+  }
+
+  function buildCardCarousel(root, data, opts) {
+    const { config, reviews, stats } = data;
+
+    const title =
+      (opts.titleOverride && String(opts.titleOverride).trim()) ||
+      (config && config.cardTitle) ||
+      "Customers are saying";
+
+    const accent =
+      (opts.accent && String(opts.accent).trim()) ||
+      (config && config.cardAccentColor) ||
+      "#111111";
+
+    const showRating = parseBool(opts.showRating, config?.cardShowRating ?? true);
+    const showName = parseBool(opts.showName, config?.cardShowName ?? true);
+    const showBadge = parseBool(opts.showBadge, config?.cardShowBadge ?? true);
+    const showProduct = parseBool(opts.showProduct, config?.cardShowProduct ?? true);
+    const maxChars = clamp(parseIntOr(opts.maxChars, config?.cardMaxChars ?? 120), 60, 260);
+    const perView = clamp(parseIntOr(opts.cardsPerView, 4), 2, 6);
+
+    root.style.setProperty("--er-accent", accent);
+    root.style.setProperty("--er-cardsPerView", String(perView));
+
+    const all = Array.isArray(reviews) ? reviews.slice() : [];
+    const withImages = all.filter((r) => r.imageUrl);
+    const items = (withImages.length ? withImages : all).slice(0, 24);
+
+    root.innerHTML = `
+      <div class="er-widget er-widget--card" style="--er-accent:${escapeHtml(accent)}; --er-cardsPerView:${perView};">
+        <header class="er-cardCarousel__head">
+          <h2 class="er-h2 er-h2--center">${escapeHtml(title)}</h2>
+          <div class="er-subhead er-subhead--center">
+            <div class="er-avg">
+              ${showRating ? `<span class="er-avg__num">${escapeHtml(stats?.avg ?? "0.0")}</span>` : ""}
+              ${showRating ? renderStars(Math.round(parseFloat(stats?.avg || "0") || 0)) : ""}
+              <span class="er-avg__count">(${escapeHtml(stats?.total ?? 0)})</span>
+              <span class="er-verified"><span class="er-verified__mark">✓</span> Verified</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="er-cardCarousel" aria-label="Reviews carousel">
+          <button class="er-navBtn" type="button" data-er-prev aria-label="Previous reviews">
+            <span aria-hidden="true">‹</span>
+          </button>
+
+          <div class="er-cardCarousel__viewport" data-er-viewport>
+            <div class="er-cardCarousel__track" data-er-track>
+              ${items
+                .map((r) => {
+                  const text = truncate(r.body || "", maxChars);
+                  const productTitle = r.productTitle || "";
+                  const name = r.customerName || "Customer";
+                  const img = r.imageUrl
+                    ? `<img class="er-cardC__img" loading="lazy" src="${escapeHtml(r.imageUrl)}" alt="" />`
+                    : `<div class="er-cardC__img er-cardC__img--empty"></div>`;
+
+                  return `
+                    <article class="er-cardC">
+                      <div class="er-cardC__media">${img}</div>
+                      <div class="er-cardC__body">
+                        <div class="er-cardC__text">${escapeHtml(text)}</div>
+                        ${showRating ? `<div class="er-cardC__rating">${renderStars(r.rating)}</div>` : ""}
+                        ${
+                          showName
+                            ? `<div class="er-cardC__name">${escapeHtml(name)}${showBadge ? ` <span class="er-badge" title="Verified">✓</span>` : ""}</div>`
+                            : ""
+                        }
+                        ${showProduct && productTitle ? `<div class="er-cardC__product">${escapeHtml(productTitle)}</div>` : ""}
+                      </div>
+                    </article>
+                  `;
+                })
+                .join("")}
+            </div>
+          </div>
+
+          <button class="er-navBtn" type="button" data-er-next aria-label="Next reviews">
+            <span aria-hidden="true">›</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    const viewport = qs(root, "[data-er-viewport]");
+    const track = qs(root, "[data-er-track]");
+    const btnPrev = qs(root, "[data-er-prev]");
+    const btnNext = qs(root, "[data-er-next]");
+
+    function cardStep() {
+      if (!track) return 320;
+      const first = track.querySelector(".er-cardC");
+      if (!first) return 320;
+      const rect = first.getBoundingClientRect();
+      const gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap || "0") || 0;
+      return rect.width + gap;
+    }
+
+    function scrollByCards(dir) {
+      if (!viewport) return;
+      const step = cardStep();
+      viewport.scrollBy({ left: dir * step, behavior: "smooth" });
+    }
+
+    function syncNav() {
+      if (!viewport || !btnPrev || !btnNext) return;
+      const max = viewport.scrollWidth - viewport.clientWidth - 1;
+      btnPrev.disabled = viewport.scrollLeft <= 0;
+      btnNext.disabled = viewport.scrollLeft >= max;
+    }
+
+    btnPrev?.addEventListener("click", () => scrollByCards(-1));
+    btnNext?.addEventListener("click", () => scrollByCards(1));
+    viewport?.addEventListener("scroll", () => window.requestAnimationFrame(syncNav), { passive: true });
+    window.setTimeout(syncNav, 0);
+    window.addEventListener("resize", () => window.requestAnimationFrame(syncNav), { passive: true });
+  }
+
   async function initRoot(root) {
     if (root.__erInited) return;
     root.__erInited = true;
 
     const endpoint = root.getAttribute("data-er-endpoint") || "";
+    const widget = root.getAttribute("data-er-widget") || "main";
     const submitUrl = root.getAttribute("data-er-submit") || "";
     const titleOverride = root.getAttribute("data-er-title-override") || "";
 
@@ -420,6 +547,13 @@
     const productId = root.getAttribute("data-er-product-id") || "";
     const productTitle = root.getAttribute("data-er-product-title") || "";
 
+    const showRating = root.getAttribute("data-er-show-rating");
+    const showName = root.getAttribute("data-er-show-name");
+    const showBadge = root.getAttribute("data-er-show-badge");
+    const showProduct = root.getAttribute("data-er-show-product");
+    const maxChars = root.getAttribute("data-er-max-chars") || "";
+    const cardsPerView = root.getAttribute("data-er-cards-per-view") || "";
+
     if (!endpoint) {
       root.innerHTML = `<div class="er-widget er-widget--main"><div class="er-empty">Missing widget endpoint.</div></div>`;
       return;
@@ -430,17 +564,30 @@
       const data = await res.json();
       if (!res.ok || data?.error) throw new Error(data?.error || "Failed to load reviews");
 
-      buildMainWidget(root, data, {
-        submitUrl,
-        titleOverride,
-        accent,
-        showBreakdown,
-        showWrite,
-        defaultSort,
-        pageSize,
-        productId,
-        productTitle,
-      });
+      if (widget === "card") {
+        buildCardCarousel(root, data, {
+          titleOverride,
+          accent,
+          showRating,
+          showName,
+          showBadge,
+          showProduct,
+          maxChars,
+          cardsPerView,
+        });
+      } else {
+        buildMainWidget(root, data, {
+          submitUrl,
+          titleOverride,
+          accent,
+          showBreakdown,
+          showWrite,
+          defaultSort,
+          pageSize,
+          productId,
+          productTitle,
+        });
+      }
     } catch (err) {
       root.innerHTML = `
         <div class="er-widget er-widget--main">
@@ -454,7 +601,7 @@
   }
 
   function boot() {
-    const roots = qsa(document, ".er-root[data-er-widget='main']");
+    const roots = qsa(document, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card']");
     if (roots.length === 0) return;
 
     const io =

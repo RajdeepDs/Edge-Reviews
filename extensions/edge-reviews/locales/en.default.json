@@ -11,6 +11,19 @@
         "page_size": "Reviews per page"
       }
     },
+    "card_carousel": {
+      "name": "Edge Reviews — Card carousel",
+      "settings": {
+        "title": "Section title",
+        "accent_color": "Accent color",
+        "show_rating": "Show star rating",
+        "show_name": "Show customer name",
+        "show_badge": "Show verified badge",
+        "show_product": "Show product title",
+        "max_chars": "Max review text length",
+        "cards_per_view": "Cards per view"
+      }
+    },
     "app_embed": {
       "name": "Edge Reviews — App embed"
     }

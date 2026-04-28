@@ -1,0 +1,140 @@
+{%- comment -%}
+  Edge Reviews — Card carousel (image + text)
+{%- endcomment -%}
+
+{%- assign er_shop = shop.permanent_domain | default: shop.domain -%}
+{%- assign er_shop_param = er_shop | url_encode -%}
+{%- assign er_endpoint = '/apps/edge-reviews/widget?shop=' | append: er_shop_param -%}
+
+<script>
+  (function () {
+    if (window.__edgeReviewsAssetsLoaded) return;
+    window.__edgeReviewsAssetsLoaded = true;
+
+    var cssHref = {{ 'edge-reviews.css' | asset_url | json }};
+    var jsSrc = {{ 'edge-reviews.js' | asset_url | json }};
+
+    if (!document.querySelector('link[href="' + cssHref + '"]')) {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = cssHref;
+      document.head.appendChild(link);
+    }
+
+    if (!document.querySelector('script[src="' + jsSrc + '"]')) {
+      var s = document.createElement('script');
+      s.src = jsSrc;
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+  })();
+</script>
+
+<section
+  class="er-root"
+  data-er-widget="card"
+  data-er-shop="{{ er_shop }}"
+  data-er-endpoint="{{ er_endpoint }}"
+  data-er-title-override="{{ block.settings.title | escape }}"
+  data-er-accent="{{ block.settings.accent_color }}"
+  data-er-show-rating="{{ block.settings.show_rating }}"
+  data-er-show-name="{{ block.settings.show_name }}"
+  data-er-show-badge="{{ block.settings.show_badge }}"
+  data-er-show-product="{{ block.settings.show_product }}"
+  data-er-max-chars="{{ block.settings.max_chars }}"
+  data-er-cards-per-view="{{ block.settings.cards_per_view }}"
+>
+  <div class="er-widget er-widget--card" style="--er-accent: {{ block.settings.accent_color }};">
+    <div class="er-shell">
+      <div class="er-shell__header er-shell__header--center">
+        <div class="er-shell__title"></div>
+        <div class="er-shell__meta">
+          <div class="er-skel er-skel--stars"></div>
+          <div class="er-skel er-skel--text"></div>
+        </div>
+      </div>
+      <div class="er-cardCarousel__shell">
+        <div class="er-skel er-skel--pill" style="width:36px;height:36px;border-radius:999px;"></div>
+        <div class="er-shell__grid er-shell__grid--carousel">
+          {%- for i in (1..4) -%}
+            <div class="er-card er-card--skeleton" aria-hidden="true">
+              <div class="er-skel er-skel--media"></div>
+              <div class="er-card__body">
+                <div class="er-skel er-skel--line"></div>
+                <div class="er-skel er-skel--line er-skel--lineShort"></div>
+                <div class="er-skel er-skel--starsSmall"></div>
+              </div>
+            </div>
+          {%- endfor -%}
+        </div>
+        <div class="er-skel er-skel--pill" style="width:36px;height:36px;border-radius:999px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "t:blocks.card_carousel.name",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "t:blocks.card_carousel.settings.title",
+      "default": "Customers are saying"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "t:blocks.card_carousel.settings.accent_color",
+      "default": "#111111"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_rating",
+      "label": "t:blocks.card_carousel.settings.show_rating",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_name",
+      "label": "t:blocks.card_carousel.settings.show_name",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_badge",
+      "label": "t:blocks.card_carousel.settings.show_badge",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_product",
+      "label": "t:blocks.card_carousel.settings.show_product",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "max_chars",
+      "min": 60,
+      "max": 220,
+      "step": 10,
+      "unit": "chr",
+      "label": "t:blocks.card_carousel.settings.max_chars",
+      "default": 120
+    },
+    {
+      "type": "range",
+      "id": "cards_per_view",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "unit": "crd",
+      "label": "t:blocks.card_carousel.settings.cards_per_view",
+      "default": 4
+    }
+  ]
+}
+{% endschema %}
+
