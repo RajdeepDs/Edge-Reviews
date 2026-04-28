@@ -13,6 +13,8 @@ export default [
   ]),
   route("auth/login", "routes/auth.login/route.tsx"),
   route("auth/*", "routes/auth.$.tsx"),
+  route("api/widget", "routes/api.widget.tsx"),
+  route("api/reviews", "routes/api.reviews.tsx"),
   route("webhooks/app/scopes_update", "routes/webhooks.app.scopes_update.tsx"),
   route("webhooks/app/uninstalled", "routes/webhooks.app.uninstalled.tsx"),
 ] satisfies RouteConfig;

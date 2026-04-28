@@ -1,0 +1,19 @@
+{{ 'edge-reviews.css' | asset_url | stylesheet_tag }}
+
+<div data-er-widget="masonry-grid" class="er-widget-root">
+  <div class="er-skeleton er-skeleton--grid">
+    {% for i in (1..8) %}
+      <div class="er-skeleton-card"></div>
+    {% endfor %}
+  </div>
+</div>
+
+<script src="{{ 'edge-reviews.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "ER: Masonry Grid",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}

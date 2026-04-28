@@ -1,0 +1,7 @@
+api_version = "2025-01"
+
+[[extensions]]
+uid = "b4349645-7289-58f0-cec6-76e5ffce87103e8c87a5"
+type = "theme"
+name = "Edge Reviews"
+handle = "edge-reviews"

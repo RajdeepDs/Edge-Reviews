@@ -1,0 +1,19 @@
+{
+  "blocks": {
+    "app_embed": {
+      "name": "Edge Reviews"
+    },
+    "main_widget": {
+      "name": "Edge Reviews — Main Widget"
+    },
+    "fan_carousel": {
+      "name": "Edge Reviews — Fan Carousel"
+    },
+    "card_carousel": {
+      "name": "Edge Reviews — Card Carousel"
+    },
+    "masonry_grid": {
+      "name": "Edge Reviews — Masonry Grid"
+    }
+  }
+}

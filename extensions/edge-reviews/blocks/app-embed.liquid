@@ -1,0 +1,10 @@
+{{ 'edge-reviews.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'edge-reviews.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Edge Reviews",
+  "target": "body",
+  "settings": []
+}
+{% endschema %}
