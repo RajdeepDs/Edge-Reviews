@@ -380,7 +380,7 @@ const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?
         </s-section>
 
         {/* Settings + Preview */}
-        <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16, alignItems: "start" }}>
 
           {/* Settings panel */}
           <s-stack gap="base">
@@ -488,25 +488,31 @@ const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?
           </s-stack>
 
           {/* Preview panel */}
-          <s-section heading="Preview">
-            <div style={{ background: "#f9fafb", borderRadius: 10, border: "1px solid #e1e3e5", minHeight: 320, overflow: "hidden" }}>
-              {activeWidget === "fan" && (
-                <FanPreview s={{ fanTitle, fanShowRating, fanShowName, fanShowBadge }} />
-              )}
-              {activeWidget === "card" && (
-                <CardPreview s={{ cardTitle, cardShowRating, cardShowName, cardShowBadge, cardShowProduct, cardAccentColor }} />
-              )}
-              {activeWidget === "masonry" && (
-                <MasonryPreview s={{ masonryTitle, masonryColumns: parseInt(masonryColumns, 10), masonryShowRating, masonryShowName, masonryShowBadge, masonryTileColor, masonryAccentColor }} />
-              )}
+            <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #e1e3e5", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+              {/* Browser chrome */}
+              <div style={{ backgroundColor: "#f1f2f3", borderBottom: "1px solid #e1e3e5", padding: "12px 16px", display: "flex", alignItems: "center", position: "relative" }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["#d9d9d9", "#d9d9d9", "#d9d9d9"].map((color, i) => (
+                    <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: color }} />
+                  ))}
+                </div>
+                <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 12, color: "#6d7175", fontWeight: 400, whiteSpace: "nowrap" }}>
+                  {WIDGET_TYPES.find((wt) => wt.id === activeWidget)?.label}
+                </div>
+              </div>
+              {/* Page body */}
+              <div style={{ backgroundColor: "#f9fafb", minHeight: 420 }}>
+                {activeWidget === "fan" && (
+                  <FanPreview s={{ fanTitle, fanShowRating, fanShowName, fanShowBadge }} />
+                )}
+                {activeWidget === "card" && (
+                  <CardPreview s={{ cardTitle, cardShowRating, cardShowName, cardShowBadge, cardShowProduct, cardAccentColor }} />
+                )}
+                {activeWidget === "masonry" && (
+                  <MasonryPreview s={{ masonryTitle, masonryColumns: parseInt(masonryColumns, 10), masonryShowRating, masonryShowName, masonryShowBadge, masonryTileColor, masonryAccentColor }} />
+                )}
+              </div>
             </div>
-            <div style={{ marginTop: 10, padding: "8px 12px", background: "#fff8e1", borderRadius: 6, border: "1px solid #f0c84a" }}>
-              <p style={{ fontSize: 12, color: "#7d5a00", margin: 0 }}>
-                This is a placeholder preview using sample data. Your actual widget will show real reviews from your store.
-              </p>
-            </div>
-          </s-section>
-
         </div>
       </s-stack>
     </s-page>
