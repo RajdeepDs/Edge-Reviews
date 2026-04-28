@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -26,7 +27,7 @@ function SettingToggleRow({
         <s-text>{title}</s-text>
         <s-text color="subdued">{description}</s-text>
       </s-stack>
-      <s-switch checked={checked || undefined} onClick={onToggle} />
+      <s-switch checked={checked || undefined} onInput={onToggle} />
     </s-grid>
   );
 }
@@ -115,7 +116,7 @@ export default function SettingsPage() {
                   <s-text color="subdued">
                     Reviews below this rating are held for manual review instead of being published automatically.
                   </s-text>
-                  <div onChange={(e: any) => update("importMinRating", e.target.value)}>
+                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("importMinRating", (e.target as HTMLSelectElement).value)}>
                     <s-select value={settings.importMinRating}>
                       <s-option value="5">5 stars only</s-option>
                       <s-option value="4">4 stars and above</s-option>
@@ -144,7 +145,7 @@ export default function SettingsPage() {
               <s-text color="subdued">
                 Label shown in the Source column for reviews imported via CSV.
               </s-text>
-              <div onInput={(e: any) => update("importSourceLabel", e.target.value)}>
+              <div onInput={(e: FormEvent<HTMLDivElement>) => update("importSourceLabel", (e.target as HTMLInputElement).value)}>
                 <s-text-field
                   value={settings.importSourceLabel}
                   placeholder="CSV Import"
@@ -177,7 +178,7 @@ export default function SettingsPage() {
                   <s-text color="subdued">
                     Reviews below this threshold are held for manual review.
                   </s-text>
-                  <div onChange={(e: any) => update("minAutoPublishRating", e.target.value)}>
+                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("minAutoPublishRating", (e.target as HTMLSelectElement).value)}>
                     <s-select value={settings.minAutoPublishRating}>
                       <s-option value="5">5 stars only</s-option>
                       <s-option value="4">4 stars and above</s-option>
@@ -215,16 +216,12 @@ export default function SettingsPage() {
             <s-stack gap="small-200">
               <s-text>Minimum review length</s-text>
               <s-text color="subdued">
-                Reviews shorter than this will be rejected. Use this to filter out low-effort submissions like "ok" or "good".
+                Reviews shorter than this will be rejected. Use this to filter out low-effort submissions like &quot;ok&quot; or &quot;good&quot;.
               </s-text>
-              <div onInput={(e: any) => update("minReviewLength", e.target.value)}>
+              <div onInput={(e: FormEvent<HTMLDivElement>) => update("minReviewLength", (e.target as HTMLInputElement).value)}>
                 <s-text-field
-                  type="number"
                   value={settings.minReviewLength}
                   placeholder="10"
-                  min="0"
-                  max="500"
-                  suffix="characters"
                 />
               </div>
             </s-stack>
@@ -288,7 +285,7 @@ export default function SettingsPage() {
                 <s-stack gap="small-200">
                   <s-text>Widget theme</s-text>
                   <s-text color="subdued">Color theme for the reviews widget.</s-text>
-                  <div onChange={(e: any) => update("widgetTheme", e.target.value)}>
+                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("widgetTheme", (e.target as HTMLSelectElement).value)}>
                     <s-select value={settings.widgetTheme}>
                       <s-option value="light">Light</s-option>
                       <s-option value="dark">Dark</s-option>
@@ -299,7 +296,7 @@ export default function SettingsPage() {
                 <s-stack gap="small-200">
                   <s-text>Widget layout</s-text>
                   <s-text color="subdued">How reviews are arranged on the page.</s-text>
-                  <div onChange={(e: any) => update("widgetLayout", e.target.value)}>
+                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("widgetLayout", (e.target as HTMLSelectElement).value)}>
                     <s-select value={settings.widgetLayout}>
                       <s-option value="list">List</s-option>
                       <s-option value="grid">Grid</s-option>
@@ -321,14 +318,14 @@ export default function SettingsPage() {
                     onChange={(e) => update("accentColor", e.target.value)}
                     style={{ width: "36px", height: "36px", padding: "2px", border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer", background: "none" }}
                   />
-                  <div onInput={(e: any) => {
-                    const val = e.target.value;
+                  <div onInput={(e: FormEvent<HTMLDivElement>) => {
+                    const val = (e.target as HTMLInputElement).value;
                     if (/^#[0-9A-Fa-f]{6}$/.test(val)) update("accentColor", val);
                   }}>
                     <s-text-field
                       value={settings.accentColor}
                       placeholder="#EF9F27"
-                      maxlength="7"
+                      maxLength={7}
                     />
                   </div>
                 </div>
@@ -358,20 +355,21 @@ export default function SettingsPage() {
                   <s-stack gap="small-200">
                     <s-text>Notification email</s-text>
                     <s-text color="subdued">Address where notifications will be sent.</s-text>
-                    <div onInput={(e: any) => {
-                      const val = e.target.value;
+                    <div onInput={(e: FormEvent<HTMLDivElement>) => {
+                      const val = (e.target as HTMLInputElement).value;
                       update("notificationEmail", val);
                       setEmailError(val && !isValidEmail(val) ? "Enter a valid email address." : "");
                     }}>
                       <s-text-field
-                        type="email"
                         value={settings.notificationEmail}
                         placeholder="you@yourstore.com"
                         error={emailError || undefined}
                       />
                     </div>
                     {emailError && (
-                      <s-text color="critical">{emailError}</s-text>
+                      <div style={{ color: "#b52b27" }}>
+                        <s-text color="base">{emailError}</s-text>
+                      </div>
                     )}
                     <s-button
                       variant="secondary"
@@ -383,7 +381,7 @@ export default function SettingsPage() {
                   <s-stack gap="small-200">
                     <s-text>Frequency</s-text>
                     <s-text color="subdued">How often to receive notification emails.</s-text>
-                    <div onChange={(e: any) => update("digestFrequency", e.target.value)}>
+                    <div onChange={(e: FormEvent<HTMLDivElement>) => update("digestFrequency", (e.target as HTMLSelectElement).value)}>
                       <s-select value={settings.digestFrequency}>
                         <s-option value="instant">Instant</s-option>
                         <s-option value="daily">Daily digest</s-option>
@@ -408,7 +406,7 @@ export default function SettingsPage() {
               <s-stack gap="small-200">
                 <s-text>Display name</s-text>
                 <s-text color="subdued">Business name shown in emails and the widget.</s-text>
-                <div onInput={(e: any) => update("displayName", e.target.value)}>
+                <div onInput={(e: FormEvent<HTMLDivElement>) => update("displayName", (e.target as HTMLInputElement).value)}>
                   <s-text-field
                     value={settings.displayName}
                     placeholder="Your Store Name"
@@ -418,7 +416,7 @@ export default function SettingsPage() {
               <s-stack gap="small-200">
                 <s-text>Reply signature</s-text>
                 <s-text color="subdued">Appended to the end of your review replies.</s-text>
-                <div onInput={(e: any) => update("replySignature", e.target.value)}>
+                <div onInput={(e: FormEvent<HTMLDivElement>) => update("replySignature", (e.target as HTMLInputElement).value)}>
                   <s-text-field
                     value={settings.replySignature}
                     placeholder="— The Team at Your Store"

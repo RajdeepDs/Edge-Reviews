@@ -7,7 +7,7 @@ const PRESETS = [
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
   { value: "last_7d", label: "Last 7d" },
-  { value: "all_time", label: "Last 30d" },
+  { value: "last_30d", label: "Last 30d" },
   { value: "last_90d", label: "Last 90d" },
   { value: "last_365d", label: "Last 365d" },
   { value: "last_month", label: "Last month" },
@@ -30,7 +30,7 @@ function computeRange(key: string): { from: string; to: string } {
       const d = new Date(now); d.setDate(d.getDate() - 7);
       return { from: fmt(d), to: fmt(now) };
     }
-    case "all_time": {
+    case "last_30d": {
       const d = new Date(now); d.setDate(d.getDate() - 30);
       return { from: fmt(d), to: fmt(now) };
     }

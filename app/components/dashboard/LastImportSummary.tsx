@@ -92,7 +92,9 @@ function ProgressBar({ rate }: { rate: number }) {
     <s-stack gap="small-200">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <s-text color="base">Success rate</s-text>
-        <s-heading style={{ color: textColor }}>{rate.toFixed(1)}%</s-heading>
+        <div style={{ color: textColor }}>
+          <s-heading>{rate.toFixed(1)}%</s-heading>
+        </div>
       </div>
       <div style={{ height: "6px", borderRadius: "99px", background: "#f1f1f1", overflow: "hidden" }}>
         <div
@@ -175,7 +177,9 @@ export function LastImportSummary({ lastImport, onImportReviews }: LastImportSum
         <s-stack gap="small-300">
           <ProgressBar rate={successRate} />
           <div style={{ background: ic.bg, borderRadius: "8px", padding: "10px 12px" }}>
-            <s-text style={{ color: ic.color }}>{insight.text}</s-text>
+            <div style={{ color: ic.color }}>
+              <s-text color="base">{insight.text}</s-text>
+            </div>
           </div>
         </s-stack>
 
@@ -188,7 +192,9 @@ export function LastImportSummary({ lastImport, onImportReviews }: LastImportSum
           onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.textDecoration = "none")}
         >
-          <s-text style={{ color: "inherit" }}>View imported reviews</s-text>
+          <span style={{ color: "inherit" }}>
+            <s-text color="base">View imported reviews</s-text>
+          </span>
           {chevronRight}
         </Link>
 

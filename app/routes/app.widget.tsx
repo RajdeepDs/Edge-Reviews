@@ -10,7 +10,7 @@ import prisma from "../db.server";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type WidgetType = "fan" | "card" | "masonry";
+type WidgetType = "main" | "fan" | "card" | "masonry";
 
 // ── Loader ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +34,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   await prisma.widgetConfig.upsert({
     where: { shop },
     update: {
+      mainTitle: get("mainTitle"),
+      mainShowWriteButton: bool("mainShowWriteButton"),
+      mainShowBreakdown: bool("mainShowBreakdown"),
+      mainShowWithPhotosFilter: bool("mainShowWithPhotosFilter"),
+      mainDefaultSort: get("mainDefaultSort"),
+      mainPageSize: num("mainPageSize"),
+      mainAccentColor: get("mainAccentColor"),
+
       fanTitle: get("fanTitle"), fanShowRating: bool("fanShowRating"),
       fanShowName: bool("fanShowName"), fanShowBadge: bool("fanShowBadge"),
       fanAccentColor: get("fanAccentColor"),
@@ -50,6 +58,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     },
     create: {
       shop,
+      mainTitle: get("mainTitle"),
+      mainShowWriteButton: bool("mainShowWriteButton"),
+      mainShowBreakdown: bool("mainShowBreakdown"),
+      mainShowWithPhotosFilter: bool("mainShowWithPhotosFilter"),
+      mainDefaultSort: get("mainDefaultSort"),
+      mainPageSize: num("mainPageSize"),
+      mainAccentColor: get("mainAccentColor"),
+
       fanTitle: get("fanTitle"), fanShowRating: bool("fanShowRating"),
       fanShowName: bool("fanShowName"), fanShowBadge: bool("fanShowBadge"),
       fanAccentColor: get("fanAccentColor"),
@@ -118,6 +134,89 @@ const ArrowBtn = ({ dir }: { dir: "left" | "right" }) => (
     {dir === "left" ? "‹" : "›"}
   </div>
 );
+
+// ── Preview: Main Widget ────────────────────────────────────────────────────────
+
+function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boolean; mainShowBreakdown: boolean; mainShowWithPhotosFilter: boolean; mainDefaultSort: string; mainPageSize: string; mainAccentColor: string } }) {
+  const breakdown = [
+    { star: 5, pct: 100 },
+    { star: 4, pct: 0 },
+    { star: 3, pct: 0 },
+    { star: 2, pct: 0 },
+    { star: 1, pct: 0 },
+  ];
+
+  return (
+    <div style={{ padding: "22px 16px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 750, color: "#111827" }}>{s.mainTitle}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>5.0</span>
+            <span style={{ color: "#fbbf24", fontSize: 12 }}>★★★★★</span>
+            <span style={{ fontSize: 12, color: "#6d7175" }}>(20)</span>
+            <span style={{ background: "#e8f5e9", color: "#2d7a3f", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20 }}>
+              ✓ Verified
+            </span>
+          </div>
+        </div>
+        {s.mainShowWriteButton && (
+          <button style={{ background: s.mainAccentColor, color: "#fff", border: "none", borderRadius: 10, padding: "9px 12px", fontSize: 12, fontWeight: 650, cursor: "pointer" }}>
+            Write a review
+          </button>
+        )}
+      </div>
+
+      {s.mainShowBreakdown && (
+        <div style={{ marginTop: 14, display: "grid", gap: 6, maxWidth: 420 }}>
+          {breakdown.map((b) => (
+            <div key={b.star} style={{ display: "grid", gridTemplateColumns: "18px 12px 1fr 40px", alignItems: "center", gap: 8, fontSize: 11, color: "#6d7175" }}>
+              <span style={{ textAlign: "right", fontWeight: 650, color: "#111827" }}>{b.star}</span>
+              <span style={{ color: "#fbbf24" }}>★</span>
+              <div style={{ height: 8, borderRadius: 999, background: "rgba(17,24,39,0.08)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${b.pct}%`, background: `linear-gradient(90deg, ${s.mainAccentColor}, ${s.mainAccentColor})` }} />
+              </div>
+              <span style={{ textAlign: "right" }}>{b.pct}%</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11, color: "#6d7175" }}>Showing 20/20 reviews</span>
+          {s.mainShowWithPhotosFilter && (
+            <button style={{ border: "1px solid rgba(0,0,0,0.12)", background: "#fff", borderRadius: 999, padding: "6px 10px", fontSize: 11, fontWeight: 650, cursor: "pointer" }}>
+              with pictures
+            </button>
+          )}
+        </div>
+        <select value={s.mainDefaultSort} disabled style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "6px 10px", fontSize: 11, fontWeight: 650, color: "#111827", background: "#fff" }}>
+          <option value="latest">Latest</option>
+          <option value="highest">Highest</option>
+          <option value="lowest">Lowest</option>
+        </select>
+      </div>
+
+      <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden", background: "#fff" }}>
+            <div style={{ height: 110, background: GRADIENTS[(i + 2) % GRADIENTS.length] }} />
+            <div style={{ padding: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 750, color: "#111827" }}>Customer</div>
+                <div style={{ fontSize: 10, color: "#fbbf24" }}>★★★★★</div>
+              </div>
+              <div style={{ fontSize: 10, color: "#6d7175", marginTop: 6, lineHeight: 1.35 }}>
+                Great product. Would buy again.
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Preview: Fan Carousel ──────────────────────────────────────────────────────
 
@@ -278,6 +377,7 @@ function MasonryPreview({ s }: { s: { masonryTitle: string; masonryColumns: numb
 // ── Widget types ───────────────────────────────────────────────────────────────
 
 const WIDGET_TYPES: { id: WidgetType; label: string }[] = [
+  { id: "main",    label: "Main Widget" },
   { id: "fan",     label: "Fan Carousel" },
   { id: "card",    label: "Card Carousel" },
   { id: "masonry", label: "Masonry Grid" },
@@ -290,7 +390,16 @@ export default function WidgetPage() {
   const fetcher = useFetcher();
   const shopify = useAppBridge();
 
-  const [activeWidget, setActiveWidget] = useState<WidgetType>("fan");
+  const [activeWidget, setActiveWidget] = useState<WidgetType>("main");
+
+  // Main widget settings
+  const [mainTitle, setMainTitle] = useState(config?.mainTitle ?? "Reviews");
+  const [mainShowWriteButton, setMainShowWriteButton] = useState(config?.mainShowWriteButton ?? true);
+  const [mainShowBreakdown, setMainShowBreakdown] = useState(config?.mainShowBreakdown ?? true);
+  const [mainShowWithPhotosFilter, setMainShowWithPhotosFilter] = useState(config?.mainShowWithPhotosFilter ?? true);
+  const [mainDefaultSort, setMainDefaultSort] = useState(config?.mainDefaultSort ?? "latest");
+  const [mainPageSize, setMainPageSize] = useState(String(config?.mainPageSize ?? 20));
+  const [mainAccentColor, setMainAccentColor] = useState(config?.mainAccentColor ?? "#111111");
 
   // Fan settings
   const [fanTitle, setFanTitle] = useState(config?.fanTitle ?? "From our customers");
@@ -305,7 +414,7 @@ export default function WidgetPage() {
   const [cardShowName, setCardShowName] = useState(config?.cardShowName ?? true);
   const [cardShowBadge, setCardShowBadge] = useState(config?.cardShowBadge ?? true);
   const [cardShowProduct, setCardShowProduct] = useState(config?.cardShowProduct ?? true);
-const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?? "#000000");
+  const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?? "#000000");
 
   // Masonry settings
   const [masonryTitle, setMasonryTitle] = useState(config?.masonryTitle ?? "From our customers");
@@ -318,6 +427,14 @@ const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?
 
   const handleSave = () => {
     const fd = new FormData();
+    fd.set("mainTitle", mainTitle);
+    fd.set("mainShowWriteButton", String(mainShowWriteButton));
+    fd.set("mainShowBreakdown", String(mainShowBreakdown));
+    fd.set("mainShowWithPhotosFilter", String(mainShowWithPhotosFilter));
+    fd.set("mainDefaultSort", mainDefaultSort);
+    fd.set("mainPageSize", mainPageSize);
+    fd.set("mainAccentColor", mainAccentColor);
+
     fd.set("fanTitle", fanTitle); fd.set("fanShowRating", String(fanShowRating));
     fd.set("fanShowName", String(fanShowName)); fd.set("fanShowBadge", String(fanShowBadge));
     fd.set("fanAccentColor", fanAccentColor);
@@ -384,6 +501,60 @@ const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?
 
           {/* Settings panel */}
           <s-stack gap="base">
+
+            {activeWidget === "main" && (
+              <>
+                <s-section heading="General">
+                  <s-text-field label="Section title" {...({ value: mainTitle, onInput: (e: Event) => setMainTitle((e.target as HTMLInputElement).value) } as object)} />
+                  <BlockStack gap="100">
+                    <Text as="p" variant="bodyMd">Accent color</Text>
+                    <ColorField value={mainAccentColor} onChange={setMainAccentColor} />
+                  </BlockStack>
+                </s-section>
+                <s-section heading="Display">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show “Write a review” button</Text>
+                    <s-switch checked={mainShowWriteButton} onInput={() => setMainShowWriteButton(!mainShowWriteButton)} accessibilityLabel="Toggle write a review button" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show rating breakdown</Text>
+                    <s-switch checked={mainShowBreakdown} onInput={() => setMainShowBreakdown(!mainShowBreakdown)} accessibilityLabel="Toggle rating breakdown" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show “with pictures” filter</Text>
+                    <s-switch checked={mainShowWithPhotosFilter} onInput={() => setMainShowWithPhotosFilter(!mainShowWithPhotosFilter)} accessibilityLabel="Toggle with pictures filter" />
+                  </div>
+                </s-section>
+                <s-section heading="Behavior">
+                  <BlockStack gap="200">
+                    <Text as="span" variant="bodyMd">Default sort</Text>
+                    <s-select
+                      label="Default sort"
+                      labelAccessibilityVisibility="exclusive"
+                      value={mainDefaultSort}
+                      onInput={(e: Event) => setMainDefaultSort((e.target as HTMLSelectElement).value)}
+                    >
+                      <s-option value="latest">Latest</s-option>
+                      <s-option value="highest">Highest rating</s-option>
+                      <s-option value="lowest">Lowest rating</s-option>
+                    </s-select>
+                  </BlockStack>
+                  <BlockStack gap="200">
+                    <Text as="span" variant="bodyMd">Reviews per page</Text>
+                    <s-select
+                      label="Reviews per page"
+                      labelAccessibilityVisibility="exclusive"
+                      value={mainPageSize}
+                      onInput={(e: Event) => setMainPageSize((e.target as HTMLSelectElement).value)}
+                    >
+                      {["8", "12", "16", "20", "24", "32", "40", "48"].map((n) => (
+                        <s-option key={n} value={n}>{n}</s-option>
+                      ))}
+                    </s-select>
+                  </BlockStack>
+                </s-section>
+              </>
+            )}
 
             {activeWidget === "fan" && (
               <>
@@ -502,6 +673,9 @@ const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?
               </div>
               {/* Page body */}
               <div style={{ backgroundColor: "#f9fafb", minHeight: 420 }}>
+                {activeWidget === "main" && (
+                  <MainPreview s={{ mainTitle, mainShowWriteButton, mainShowBreakdown, mainShowWithPhotosFilter, mainDefaultSort, mainPageSize, mainAccentColor }} />
+                )}
                 {activeWidget === "fan" && (
                   <FanPreview s={{ fanTitle, fanShowRating, fanShowName, fanShowBadge }} />
                 )}

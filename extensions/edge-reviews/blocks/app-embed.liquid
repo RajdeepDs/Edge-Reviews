@@ -1,10 +1,16 @@
+{% comment %}
+  Edge Reviews app embed.
+  Loads shared CSS/JS once per page.
+{% endcomment %}
+
 {{ 'edge-reviews.css' | asset_url | stylesheet_tag }}
-<script src="{{ 'edge-reviews.js' | asset_url }}" defer></script>
+<script src="{{ 'edge-reviews.js' | asset_url }}" defer="defer"></script>
 
 {% schema %}
 {
-  "name": "Edge Reviews",
+  "name": "t:blocks.app_embed.name",
   "target": "body",
   "settings": []
 }
 {% endschema %}
+

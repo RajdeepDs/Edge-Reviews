@@ -71,6 +71,15 @@ model ImportRecord {
 model WidgetConfig {
   shop  String  @id
 
+  // Main Widget
+  mainTitle               String  @default("Reviews")
+  mainShowWriteButton     Boolean @default(true)
+  mainShowBreakdown       Boolean @default(true)
+  mainShowWithPhotosFilter Boolean @default(true)
+  mainDefaultSort         String  @default("latest")
+  mainPageSize            Int     @default(20)
+  mainAccentColor         String  @default("#111111")
+
   // Fan Carousel
   fanTitle          String  @default("From our customers")
   fanShowRating     Boolean @default(true)

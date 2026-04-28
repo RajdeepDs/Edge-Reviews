@@ -135,7 +135,7 @@ export function ProductsList({ products }: ProductsListProps) {
 
   const primaryAction: IndexFiltersProps["primaryAction"] = {
     type: "save-as",
-    onAction: async (_value: string) => {
+    onAction: async () => {
       await sleep(1);
       return true;
     },

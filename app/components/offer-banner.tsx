@@ -33,7 +33,7 @@ export function OfferBanner(){
                     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="100%" height="100%"><path d="M12.973 2.5v7c0 .276.236.5.527.5h5.972c.418 0 .67.44.442.773l-7.919 10.999c-.286.417-.968.225-.968-.273V15.5c0-.276-.236-.5-.527-.5H4.528c-.412 0-.665-.428-.45-.761l7.92-12c.277-.43.975-.243.975.262Z"></path></svg>
                 </span>            
                 <div>
-                    <s-heading>You're on the Free plan — 50 review imports/month.</s-heading>
+                    <s-heading>You&apos;re on the Free plan — 50 review imports/month.</s-heading>
                     <s-text>Upgrade to Pro for unlimited imports, automated requests, and priority support.</s-text>
                 </div>
             </div>

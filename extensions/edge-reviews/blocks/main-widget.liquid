@@ -1,603 +1,139 @@
-<div class="er-main-widget"
-  data-per-page="{{ block.settings.reviews_per_page | default: 8 }}"
-  data-show-photos="{{ block.settings.show_photos | default: true }}"
-  data-product-id="{{ product.id }}"
->
-  <!-- Summary Bar -->
-  <div class="er-widget-header">
-    <div class="er-summary-left">
-      <div class="er-avg-label">Average rating</div>
-      <div class="er-avg-number" id="er-avg-number">0.0</div>
-      <div class="er-stars-row">
-        <div class="er-stars-display" id="er-stars-display">
-          <span class="er-star er-star-empty">★</span><span class="er-star er-star-empty">★</span><span class="er-star er-star-empty">★</span><span class="er-star er-star-empty">★</span><span class="er-star er-star-empty">★</span>
-        </div>
-        <div class="er-total-count">(<span id="er-total-count">0</span>)</div>
-      </div>
-    </div>
+{%- comment -%}
+  Edge Reviews — Main widget
+  This block renders a lightweight shell and a JS mount point.
+{%- endcomment -%}
 
-    <div class="er-distribution" id="er-distribution">
-      {% for i in (1..5) %}
-        {% assign rating_val = 6 | minus: i %}
-        <div class="er-dist-row" data-rating="{{ rating_val }}">
-          <span class="er-dist-label">{{ rating_val }} ★</span>
-          <div class="er-dist-track"><div class="er-dist-fill" style="width:0%"></div></div>
-          <span class="er-dist-pct">0%</span>
-        </div>
-      {% endfor %}
-    </div>
+{%- assign er_shop = shop.permanent_domain | default: shop.domain -%}
+{%- assign er_shop_param = er_shop | url_encode -%}
+{%- comment -%}
+  App proxy config maps:
+    /apps/edge-reviews/<path>  ->  <application_url>/api/<path>
+  Since our backend routes are /api/widget and /api/reviews, the proxy path should be:
+    /apps/edge-reviews/widget  and  /apps/edge-reviews/reviews
+{%- endcomment -%}
+{%- assign er_endpoint = '/apps/edge-reviews/widget?shop=' | append: er_shop_param -%}
+{%- assign er_submit = '/apps/edge-reviews/reviews?shop=' | append: er_shop_param -%}
 
-    <div class="er-summary-right">
-      <button id="er-write-review-btn" class="er-write-review-btn">Write A Review</button>
-    </div>
-  </div>
-
-  <div class="er-list-control">
-    <span class="er-showing-text" id="er-showing-text">Loading reviews…</span>
-  </div>
-
-  <div class="er-reviews-grid" id="er-reviews-grid">
-    <div class="er-loading"><div class="er-spinner"></div><p>Loading reviews…</p></div>
-  </div>
-
-  <div class="er-pagination" id="er-pagination" style="display:none">
-    <button class="er-page-btn" id="er-prev-btn" disabled>Previous</button>
-    <span class="er-page-info" id="er-page-info"></span>
-    <button class="er-page-btn" id="er-next-btn">Next</button>
-  </div>
-</div>
-
-<!-- Write Review Modal -->
-<dialog id="er-review-modal" class="er-review-modal">
-  <div class="er-modal-inner">
-    <button class="er-modal-close" id="er-modal-close">&times;</button>
-    <h3 class="er-modal-title">Write A Review</h3>
-
-    <form id="er-review-form" class="er-review-form">
-      <div class="er-form-row">
-        <label class="er-label er-label-required">Rating</label>
-        <div class="er-star-input" id="er-star-input">
-          <input type="radio" name="rating" id="er-star5" value="5" required>
-          <label for="er-star5" class="er-star-label">★</label>
-          <input type="radio" name="rating" id="er-star4" value="4">
-          <label for="er-star4" class="er-star-label">★</label>
-          <input type="radio" name="rating" id="er-star3" value="3">
-          <label for="er-star3" class="er-star-label">★</label>
-          <input type="radio" name="rating" id="er-star2" value="2">
-          <label for="er-star2" class="er-star-label">★</label>
-          <input type="radio" name="rating" id="er-star1" value="1">
-          <label for="er-star1" class="er-star-label">★</label>
-        </div>
-      </div>
-
-      <div class="er-form-row">
-        <label for="er-name" class="er-label er-label-required">Name</label>
-        <input type="text" id="er-name" name="customerName" required maxlength="100" placeholder="Your name">
-      </div>
-
-      {% if block.settings.show_email_field %}
-      <div class="er-form-row">
-        <label for="er-email" class="er-label er-label-required">Email</label>
-        <input type="email" id="er-email" name="customerEmail" required placeholder="Your email (private)">
-      </div>
-      {% endif %}
-
-      <div class="er-form-row">
-        <label for="er-title" class="er-label er-label-required">Title</label>
-        <input type="text" id="er-title" name="title" required maxlength="100" placeholder="Review title">
-      </div>
-
-      <div class="er-form-row er-form-row--tall">
-        <label for="er-body" class="er-label er-label-required">Review</label>
-        <textarea id="er-body" name="body" required rows="5" maxlength="1000" placeholder="Share your experience…"></textarea>
-      </div>
-
-      <div class="er-form-row er-form-row--media">
-        <label for="er-photos" class="er-label">
-          Photos{% if block.settings.require_photo %} <span class="er-required-star">*</span>{% endif %}
-        </label>
-        <div class="er-upload-wrap">
-          <div class="er-upload-area">
-            <input type="file" id="er-photos" name="photos" accept="image/*" multiple {% if block.settings.require_photo %}required{% endif %}>
-            <label for="er-photos" class="er-upload-label">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-              </svg>
-            </label>
-          </div>
-          <span class="er-upload-note">JPG or PNG · max 5 MB · up to 5 photos</span>
-          <div class="er-photo-preview" id="er-photo-preview"></div>
-        </div>
-      </div>
-
-      <div class="er-form-actions">
-        <button type="button" class="er-btn-cancel" id="er-cancel-btn">Cancel</button>
-        <button type="submit" class="er-btn-submit" id="er-submit-btn">Submit Review</button>
-      </div>
-
-      <div class="er-form-msg" id="er-form-msg" style="display:none"></div>
-    </form>
-  </div>
-</dialog>
-
-<!-- Lightbox -->
-<div id="er-lightbox" class="er-lightbox">
-  <span class="er-lightbox-close">&times;</span>
-  <img class="er-lightbox-img" id="er-lightbox-img" src="" alt="">
-</div>
-
-<!-- Review card template -->
-<template id="er-review-tpl">
-  <div class="er-review-card">
-    <div class="er-author-pill">
-      <div class="er-avatar">
-        <span class="er-avatar-initials"></span>
-        <span class="er-verified-icon" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="background:#fff;border-radius:50%">
-            <circle cx="12" cy="12" r="10" fill="#8BC34A"/>
-            <path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-      </div>
-      <span class="er-author-name"></span>
-    </div>
-    <div class="er-card-inner">
-      <div class="er-card-stars"></div>
-      <h4 class="er-card-title"></h4>
-      <p class="er-card-body"></p>
-      <div class="er-card-photos" style="display:none">
-        <div class="er-photos-strip"></div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<style>
-  .er-main-widget { width:100%; margin:2rem auto; padding:1.5rem 0; font-family:inherit; box-sizing:border-box; }
-  .er-main-widget * { box-sizing:border-box; }
-
-  /* ── Summary bar ── */
-  .er-widget-header {
-    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
-    padding:1.5rem; border-radius:10px; background:#fff;
-    border:1px solid #ebebeb; margin-bottom:1.5rem; gap:1.5rem;
-  }
-  .er-summary-left { display:flex; flex-direction:column; align-items:flex-start; min-width:140px; }
-  .er-avg-label { font-size:.9rem; font-weight:600; color:#444; margin-bottom:.2rem; }
-  .er-avg-number { font-size:3rem; font-weight:800; color:#111; line-height:1.1; letter-spacing:-2px; }
-  .er-stars-row { display:flex; align-items:center; gap:.5rem; margin-top:.25rem; }
-  .er-stars-display { display:flex; gap:2px; }
-  .er-star { font-size:1.2rem; color:#FFB800; }
-  .er-star-empty { color:#E0E0E0; }
-  .er-total-count { font-size:.85rem; color:#666; }
-
-  /* ── Distribution ── */
-  .er-distribution { flex:1; min-width:220px; display:flex; flex-direction:column; gap:.45rem; }
-  .er-dist-row { display:grid; grid-template-columns:36px 1fr 38px; align-items:center; gap:.6rem; }
-  .er-dist-label { font-size:.82rem; font-weight:500; color:#555; }
-  .er-dist-track { height:7px; background:#f0f0f0; border-radius:99px; overflow:hidden; }
-  .er-dist-fill { height:100%; background:#FFB800; border-radius:99px; transition:width .6s ease; }
-  .er-dist-pct { font-size:.82rem; color:#888; text-align:right; }
-
-  /* ── Write review btn ── */
-  .er-summary-right { display:flex; align-items:center; }
-  .er-write-review-btn {
-    background:#1a1a1a; color:#fff; padding:.75rem 1.5rem;
-    font-weight:600; border:none; border-radius:6px; cursor:pointer;
-    font-size:.95rem; font-family:inherit; transition:opacity .15s,transform .1s;
-  }
-  .er-write-review-btn:hover { opacity:.85; transform:translateY(-1px); }
-
-  /* ── List control ── */
-  .er-list-control { margin-bottom:1rem; font-size:.9rem; color:#666; font-weight:500; }
-
-  /* ── Loading ── */
-  .er-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; gap:.75rem; color:#999; }
-  @keyframes er-spin { to { transform:rotate(360deg); } }
-  .er-spinner { width:28px; height:28px; border:3px solid #eee; border-top-color:#FFB800; border-radius:50%; animation:er-spin .8s linear infinite; }
-
-  /* ── Review grid ── */
-  .er-reviews-grid {
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1.5rem;
-  }
-
-  /* ── Review card ── */
-  .er-review-card {
-    background:#fdfdfd; border:1px solid #f0f0f0; border-radius:12px;
-    display:flex; flex-direction:column; position:relative;
-    margin-top:22px; padding:2.25rem 1.25rem 1.25rem; text-align:center;
-    box-shadow:0 4px 12px rgba(0,0,0,.03); transition:box-shadow .2s;
-  }
-  .er-review-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.07); }
-  .er-author-pill {
-    position:absolute; top:-18px; left:50%; transform:translateX(-50%);
-    background:#fff; border-radius:30px; padding:4px 14px 4px 4px;
-    display:flex; align-items:center; gap:7px;
-    box-shadow:0 4px 12px rgba(0,0,0,.08); border:1px solid #eaeaea; white-space:nowrap;
-  }
-  .er-avatar {
-    width:30px; height:30px; border-radius:50%; display:flex; align-items:center;
-    justify-content:center; font-size:.8rem; font-weight:700; color:#fff; position:relative;
-  }
-  .er-avatar-initials { line-height:1; }
-  .er-verified-icon { position:absolute; bottom:-4px; right:-4px; display:flex; }
-  .er-author-name { font-weight:700; color:#222; font-size:.9rem; }
-  .er-card-inner { display:flex; flex-direction:column; flex:1; }
-  .er-card-stars { display:flex; justify-content:center; gap:3px; color:#FFB800; font-size:1.4rem; margin-bottom:.6rem; }
-  .er-card-title { font-weight:800; font-size:1.05rem; margin:0 0 .4rem; color:#111; }
-  .er-card-body { font-size:.95rem; line-height:1.6; color:#444; margin:0; }
-  .er-photos-strip {
-    display:flex; gap:0; overflow-x:auto; scroll-snap-type:x mandatory;
-    scrollbar-width:none; -ms-overflow-style:none;
-  }
-  .er-photos-strip::-webkit-scrollbar { display:none; }
-  .er-review-photo {
-    width:100%; height:200px; object-fit:cover; border-radius:8px; cursor:pointer;
-    flex-shrink:0; scroll-snap-align:start; margin-top:.75rem;
-  }
-
-  /* ── Pagination ── */
-  .er-pagination { display:flex; justify-content:center; align-items:center; gap:1rem; margin-top:2rem; }
-  .er-page-btn {
-    padding:.5rem 1.1rem; border:1px solid #333; background:#fff;
-    border-radius:5px; cursor:pointer; font-family:inherit; font-size:.9rem;
-    transition:background .15s;
-  }
-  .er-page-btn:hover:not(:disabled) { background:#f5f5f5; }
-  .er-page-btn:disabled { opacity:.45; cursor:not-allowed; }
-  .er-page-info { font-size:.9rem; color:#555; }
-
-  /* ── Lightbox ── */
-  .er-lightbox {
-    position:fixed; z-index:999999; inset:0; background:rgba(0,0,0,.85);
-    display:none; align-items:center; justify-content:center;
-  }
-  .er-lightbox.open { display:flex; }
-  .er-lightbox-img { max-width:90%; max-height:85vh; border-radius:8px; object-fit:contain; }
-  .er-lightbox-close {
-    position:absolute; top:18px; right:26px; color:#eee; font-size:38px;
-    font-weight:700; cursor:pointer; line-height:1;
-  }
-
-  /* ── Modal ── */
-  .er-review-modal {
-    padding:0; border:none; border-radius:10px;
-    box-shadow:0 8px 32px rgba(0,0,0,.22); width:90%; max-width:560px; background:#fff;
-  }
-  .er-review-modal::backdrop { background:rgba(0,0,0,.55); }
-  .er-modal-inner { padding:2rem; position:relative; }
-  .er-modal-close {
-    position:absolute; top:.9rem; right:1.25rem; background:none; border:none;
-    font-size:1.9rem; cursor:pointer; color:#888; line-height:1;
-  }
-  .er-modal-close:hover { color:#111; }
-  .er-modal-title { margin:0 0 1.4rem; font-size:1.4rem; font-weight:700; color:#111; }
-
-  /* ── Form ── */
-  .er-review-form { display:flex; flex-direction:column; gap:0; }
-  .er-form-row {
-    display:flex; align-items:flex-start; gap:1rem; margin-bottom:1.1rem;
-  }
-  .er-label {
-    flex:0 0 90px; font-size:.9rem; font-weight:600; color:#444; padding-top:.55rem;
-  }
-  .er-label-required::before { content:"* "; color:#e53935; }
-  .er-required-star { color:#e53935; }
-  .er-form-row input[type="text"],
-  .er-form-row input[type="email"] {
-    flex:1; padding:.65rem .85rem; border:1px solid #d0d0d0; border-radius:5px;
-    font-family:inherit; font-size:.9rem; outline:none; transition:border-color .15s;
-  }
-  .er-form-row input:focus { border-color:#1a1a1a; }
-  .er-form-row--tall textarea {
-    flex:1; padding:.65rem .85rem; border:1px solid #d0d0d0; border-radius:5px;
-    font-family:inherit; font-size:.9rem; resize:vertical; outline:none; transition:border-color .15s;
-  }
-  .er-form-row--tall textarea:focus { border-color:#1a1a1a; }
-
-  /* Star input */
-  .er-star-input { display:flex; flex-direction:row-reverse; justify-content:flex-end; }
-  .er-star-input input[type="radio"] { display:none; }
-  .er-star-label { font-size:1.7rem; color:#e0e0e0; cursor:pointer; margin-right:2px; }
-  .er-star-input input:checked ~ .er-star-label,
-  .er-star-input:hover .er-star-label:hover,
-  .er-star-input:hover .er-star-label:hover ~ .er-star-label { color:#FFB800; }
-
-  /* Upload */
-  .er-form-row--media { align-items:flex-start; }
-  .er-upload-wrap { flex:1; }
-  .er-upload-area input[type="file"] { display:none; }
-  .er-upload-label {
-    display:flex; align-items:center; justify-content:center;
-    width:56px; height:56px; border:1.5px dashed #bbb; border-radius:5px;
-    cursor:pointer; color:#999; transition:border-color .15s, color .15s;
-  }
-  .er-upload-label:hover { border-color:#333; color:#333; }
-  .er-upload-note { display:block; font-size:.75rem; color:#999; margin-top:.4rem; }
-  .er-photo-preview { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem; }
-  .er-preview-thumb { position:relative; width:56px; height:56px; }
-  .er-preview-thumb img { width:100%; height:100%; object-fit:cover; border-radius:4px; }
-  .er-preview-rm {
-    position:absolute; top:-5px; right:-5px; background:#111; color:#fff;
-    border:none; border-radius:50%; width:17px; height:17px; font-size:9px;
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-  }
-
-  .er-form-actions { display:flex; justify-content:flex-end; gap:.75rem; margin-top:1.5rem; }
-  .er-btn-submit {
-    background:#1a1a1a; color:#fff; border:none; padding:.7rem 1.8rem;
-    font-weight:600; border-radius:5px; cursor:pointer; font-family:inherit; font-size:.9rem;
-  }
-  .er-btn-submit:hover { opacity:.85; }
-  .er-btn-submit:disabled { opacity:.6; cursor:not-allowed; }
-  .er-btn-cancel {
-    background:#fff; color:#333; border:1px solid #ccc; padding:.7rem 1.5rem;
-    font-weight:600; border-radius:5px; cursor:pointer; font-family:inherit; font-size:.9rem;
-  }
-  .er-btn-cancel:hover { background:#f5f5f5; }
-  .er-form-msg { margin-top:1rem; padding:.85rem; border-radius:5px; text-align:center; font-size:.9rem; }
-  .er-form-msg.success { background:#e8f5e9; color:#2e7d32; }
-  .er-form-msg.error   { background:#ffebee; color:#c62828; }
-
-  @media (max-width: 640px) {
-    .er-widget-header { flex-direction:column; align-items:flex-start; }
-    .er-distribution { width:100%; }
-    .er-reviews-grid { grid-template-columns:1fr; }
-    .er-form-row { flex-direction:column; gap:.2rem; }
-    .er-label { padding-top:0; }
-  }
-</style>
+{%- assign er_product_id = '' -%}
+{%- assign er_product_title = '' -%}
+{%- if product -%}
+  {%- assign er_product_id = product.id -%}
+  {%- assign er_product_title = product.title -%}
+{%- endif -%}
 
 <script>
-(function() {
-  const widget = document.querySelector('.er-main-widget');
-  if (!widget) return;
+  (function () {
+    if (window.__edgeReviewsAssetsLoaded) return;
+    window.__edgeReviewsAssetsLoaded = true;
 
-  const perPage    = parseInt(widget.dataset.perPage) || 8;
-  const showPhotos = widget.dataset.showPhotos !== 'false';
-  const productId  = widget.dataset.productId || null;
+    var cssHref = {{ 'edge-reviews.css' | asset_url | json }};
+    var jsSrc = {{ 'edge-reviews.js' | asset_url | json }};
 
-  const COLORS = ['#9ccc65','#ef5350','#ab47bc','#5c6bc0','#29b6f6','#ffa726'];
-
-  let allReviews = [];
-  let page = 1;
-
-  // ── Elements ──────────────────────────────────────────────────────────────
-  const avgEl       = document.getElementById('er-avg-number');
-  const starsEl     = document.getElementById('er-stars-display');
-  const countEl     = document.getElementById('er-total-count');
-  const distEl      = document.getElementById('er-distribution');
-  const showingEl   = document.getElementById('er-showing-text');
-  const gridEl      = document.getElementById('er-reviews-grid');
-  const tpl         = document.getElementById('er-review-tpl');
-  const pagEl       = document.getElementById('er-pagination');
-  const prevBtn     = document.getElementById('er-prev-btn');
-  const nextBtn     = document.getElementById('er-next-btn');
-  const pageInfo    = document.getElementById('er-page-info');
-  const writeBtn    = document.getElementById('er-write-review-btn');
-  const modal       = document.getElementById('er-review-modal');
-  const closeBtn    = document.getElementById('er-modal-close');
-  const cancelBtn   = document.getElementById('er-cancel-btn');
-  const form        = document.getElementById('er-review-form');
-  const photoInput  = document.getElementById('er-photos');
-  const preview     = document.getElementById('er-photo-preview');
-  const formMsg     = document.getElementById('er-form-msg');
-  const submitBtn   = document.getElementById('er-submit-btn');
-  const lightbox    = document.getElementById('er-lightbox');
-  const lbImg       = document.getElementById('er-lightbox-img');
-
-  lightbox.querySelector('.er-lightbox-close').onclick = () => lightbox.classList.remove('open');
-  lightbox.onclick = e => { if (e.target !== lbImg) lightbox.classList.remove('open'); };
-
-  // ── Load data ─────────────────────────────────────────────────────────────
-  async function load() {
-    try {
-      const res = await fetch('/apps/edge-reviews/widget');
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      updateSummary(data.stats);
-      allReviews = data.reviews || [];
-      renderPage();
-    } catch {
-      gridEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#888">Could not load reviews.</div>';
-      showingEl.textContent = '';
-    }
-  }
-
-  function updateSummary(stats) {
-    if (!stats) return;
-    avgEl.textContent = stats.avg;
-    countEl.textContent = stats.total;
-
-    const r = parseFloat(stats.avg);
-    let html = '';
-    for (let i = 1; i <= 5; i++) {
-      html += i <= r
-        ? '<span class="er-star">★</span>'
-        : (i - 0.5 <= r
-          ? '<span class="er-star" style="position:relative;color:#E0E0E0"><span style="position:absolute;overflow:hidden;width:50%;color:#FFB800">★</span>★</span>'
-          : '<span class="er-star er-star-empty">★</span>');
-    }
-    starsEl.innerHTML = html;
-
-    (stats.breakdown || []).forEach(function(b) {
-      const row = distEl.querySelector('[data-rating="' + b.star + '"]');
-      if (!row) return;
-      row.querySelector('.er-dist-fill').style.width = b.pct + '%';
-      row.querySelector('.er-dist-pct').textContent = b.pct + '%';
-    });
-  }
-
-  // ── Render page ───────────────────────────────────────────────────────────
-  function renderPage() {
-    const total = allReviews.length;
-    if (total === 0) {
-      gridEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#888">No reviews yet. Be the first to write one!</div>';
-      showingEl.textContent = 'No reviews yet';
-      pagEl.style.display = 'none';
-      return;
+    if (!document.querySelector('link[href="' + cssHref + '"]')) {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = cssHref;
+      document.head.appendChild(link);
     }
 
-    const pages = Math.ceil(total / perPage);
-    page = Math.max(1, Math.min(page, pages));
-    const start = (page - 1) * perPage;
-    const slice = allReviews.slice(start, start + perPage);
-
-    showingEl.innerHTML = 'Showing <strong>' + (start + 1) + '–' + Math.min(start + perPage, total) + '</strong> of <strong>' + total + '</strong> reviews';
-
-    gridEl.innerHTML = '';
-    slice.forEach(function(r) {
-      const node = tpl.content.cloneNode(true);
-      const card = node.querySelector('.er-review-card');
-
-      const name = r.customerName || 'Anonymous';
-      const initials = name.split(' ').map(function(w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
-      const color = COLORS[name.charCodeAt(0) % COLORS.length];
-
-      const avatarEl = node.querySelector('.er-avatar');
-      avatarEl.style.background = color;
-      node.querySelector('.er-avatar-initials').textContent = initials;
-      node.querySelector('.er-author-name').textContent = name;
-
-      const starsHtml = [1,2,3,4,5].map(function(i) {
-        return i <= r.rating ? '★' : '<span style="color:#e0e0e0">★</span>';
-      }).join('');
-      node.querySelector('.er-card-stars').innerHTML = starsHtml;
-
-      node.querySelector('.er-card-title').textContent = r.title || '';
-      node.querySelector('.er-card-body').textContent  = r.body  || '';
-
-      if (showPhotos && r.imageUrl) {
-        const strip = node.querySelector('.er-photos-strip');
-        node.querySelector('.er-card-photos').style.display = 'block';
-        const img = document.createElement('img');
-        img.className = 'er-review-photo';
-        img.src = r.imageUrl;
-        img.onclick = function() { lbImg.src = r.imageUrl; lightbox.classList.add('open'); };
-        strip.appendChild(img);
-      }
-
-      gridEl.appendChild(node);
-    });
-
-    if (pages > 1) {
-      pagEl.style.display = 'flex';
-      pageInfo.textContent = 'Page ' + page + ' of ' + pages;
-      prevBtn.disabled = page === 1;
-      nextBtn.disabled = page === pages;
-    } else {
-      pagEl.style.display = 'none';
+    if (!document.querySelector('script[src="' + jsSrc + '"]')) {
+      var s = document.createElement('script');
+      s.src = jsSrc;
+      s.defer = true;
+      document.head.appendChild(s);
     }
-  }
-
-  prevBtn.onclick = function() { page--; renderPage(); };
-  nextBtn.onclick = function() { page++; renderPage(); };
-
-  // ── Modal ─────────────────────────────────────────────────────────────────
-  writeBtn.onclick = function() { modal.showModal(); };
-  closeBtn.onclick  = function() { modal.close(); resetForm(); };
-  cancelBtn.onclick = function() { modal.close(); resetForm(); };
-
-  // ── Photo preview ─────────────────────────────────────────────────────────
-  let selectedFiles = [];
-  photoInput.onchange = function(e) {
-    const files = Array.from(e.target.files).slice(0, 5);
-    selectedFiles = files;
-    preview.innerHTML = '';
-    files.forEach(function(file, idx) {
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        const wrap = document.createElement('div');
-        wrap.className = 'er-preview-thumb';
-        wrap.innerHTML = '<img src="' + ev.target.result + '"><button type="button" class="er-preview-rm">✕</button>';
-        wrap.querySelector('.er-preview-rm').onclick = function() {
-          selectedFiles.splice(idx, 1);
-          wrap.remove();
-        };
-        preview.appendChild(wrap);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  // ── Submit ────────────────────────────────────────────────────────────────
-  form.onsubmit = async function(e) {
-    e.preventDefault();
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting…';
-    formMsg.style.display = 'none';
-
-    try {
-      const fd = new FormData();
-      fd.append('rating',        form.rating.value);
-      fd.append('customerName',  form.customerName.value);
-      fd.append('title',         form.title.value);
-      fd.append('body',          form.body.value);
-      if (form.customerEmail) fd.append('customerEmail', form.customerEmail.value);
-      if (productId) fd.append('shopifyProductId', productId);
-      selectedFiles.forEach(function(f, i) { fd.append('photo' + i, f); });
-
-      const res = await fetch('/apps/edge-reviews/reviews', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('Submission failed');
-
-      formMsg.textContent = 'Thank you! Your review has been submitted for approval.';
-      formMsg.className = 'er-form-msg success';
-      formMsg.style.display = 'block';
-
-      setTimeout(function() { modal.close(); resetForm(); load(); }, 2200);
-    } catch {
-      formMsg.textContent = 'Something went wrong. Please try again.';
-      formMsg.className = 'er-form-msg error';
-      formMsg.style.display = 'block';
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Review';
-    }
-  };
-
-  function resetForm() {
-    form.reset();
-    selectedFiles = [];
-    preview.innerHTML = '';
-    formMsg.style.display = 'none';
-  }
-
-  load();
-})();
+  })();
 </script>
+
+<section class="er-root" data-er-widget="main"
+  data-er-shop="{{ er_shop }}"
+  data-er-endpoint="{{ er_endpoint }}"
+  data-er-submit="{{ er_submit }}"
+  data-er-product-id="{{ er_product_id }}"
+  data-er-product-title="{{ er_product_title | escape }}"
+  data-er-title-override="{{ block.settings.title | escape }}"
+  data-er-accent="{{ block.settings.accent_color }}"
+  data-er-show-breakdown="{{ block.settings.show_breakdown }}"
+  data-er-show-write="{{ block.settings.show_write_button }}"
+  data-er-default-sort="{{ block.settings.default_sort }}"
+  data-er-page-size="{{ block.settings.page_size }}"
+>
+  <div class="er-widget er-widget--main" style="--er-accent: {{ block.settings.accent_color }};">
+    <div class="er-shell">
+      <div class="er-shell__header">
+        <div class="er-shell__title"></div>
+        <div class="er-shell__meta">
+          <div class="er-skel er-skel--stars"></div>
+          <div class="er-skel er-skel--text"></div>
+        </div>
+      </div>
+      <div class="er-shell__grid">
+        {%- for i in (1..8) -%}
+          <div class="er-card er-card--skeleton" aria-hidden="true">
+            <div class="er-skel er-skel--media"></div>
+            <div class="er-card__body">
+              <div class="er-skel er-skel--line"></div>
+              <div class="er-skel er-skel--line er-skel--lineShort"></div>
+              <div class="er-skel er-skel--starsSmall"></div>
+            </div>
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+</section>
 
 {% schema %}
 {
-  "name": "ER: Main Widget",
+  "name": "t:blocks.main_widget.name",
   "target": "section",
   "settings": [
     {
+      "type": "text",
+      "id": "title",
+      "label": "t:blocks.main_widget.settings.title",
+      "default": "Reviews"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "t:blocks.main_widget.settings.accent_color",
+      "default": "#111111"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_breakdown",
+      "label": "t:blocks.main_widget.settings.show_breakdown",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_write_button",
+      "label": "t:blocks.main_widget.settings.show_write_button",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "default_sort",
+      "label": "t:blocks.main_widget.settings.default_sort",
+      "default": "latest",
+      "options": [
+        { "value": "latest", "label": "Latest" },
+        { "value": "highest", "label": "Highest rating" },
+        { "value": "lowest", "label": "Lowest rating" }
+      ]
+    },
+    {
       "type": "range",
-      "id": "reviews_per_page",
-      "label": "Reviews per page",
+      "id": "page_size",
       "min": 4,
-      "max": 24,
+      "max": 48,
       "step": 4,
-      "default": 8
-    },
-    {
-      "type": "checkbox",
-      "id": "show_photos",
-      "label": "Show review photos",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "require_photo",
-      "label": "Require photo in form",
-      "default": false
-    },
-    {
-      "type": "checkbox",
-      "id": "show_email_field",
-      "label": "Show email field in form",
-      "default": true
+      "unit": "rev",
+      "label": "t:blocks.main_widget.settings.page_size",
+      "default": 20
     }
   ]
 }
 {% endschema %}
+
