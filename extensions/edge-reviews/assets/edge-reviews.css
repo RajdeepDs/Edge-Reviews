@@ -628,6 +628,177 @@
   vertical-align: middle;
 }
 
+.er-badge--onDark {
+  background: rgba(34, 197, 94, 0.22);
+  color: rgba(220, 252, 231, 1);
+}
+
+/* Fan carousel */
+.er-widget--fan {
+  width: 100%;
+  padding: 28px 16px;
+}
+
+.er-fan__head {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.er-fan {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+}
+
+.er-navBtn--ghost {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.er-fan__viewport {
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  padding: 34px 16px;
+  scroll-behavior: smooth;
+}
+
+.er-fan__viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.er-fan__track {
+  display: grid;
+  grid-auto-flow: column;
+  gap: var(--er-gap, 18px);
+  justify-content: center;
+  padding: 4px 0;
+  grid-auto-columns: calc((100% - (var(--er-gap, 14px) * (var(--er-fanPerView, 5) - 1))) / var(--er-fanPerView, 5));
+}
+
+.er-fanCard {
+  scroll-snap-align: center;
+  width: 100%;
+  aspect-ratio: 3 / 4.2;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(15, 23, 42, 0.06);
+  transform-origin: center center;
+  transform: translateY(14px) scale(0.86);
+  opacity: 0.55;
+  transition: transform 220ms ease, opacity 220ms ease;
+  will-change: transform;
+}
+
+.er-fanCard.is-near {
+  transform: translateY(10px) scale(0.96);
+  opacity: 0.78;
+}
+
+.er-fanCard.is-center {
+  transform: translateY(0) scale(1.14);
+  opacity: 1;
+  z-index: 2;
+}
+
+.er-fanCard__media,
+.er-fanCard__img {
+  width: 100%;
+  height: 100%;
+}
+
+.er-fanCard__img {
+  object-fit: cover;
+  display: block;
+}
+
+.er-fanCard__img--empty {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.05), rgba(15, 23, 42, 0.16));
+}
+
+.er-fanCard__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.74), rgba(15, 23, 42, 0.08) 55%, rgba(15, 23, 42, 0));
+  pointer-events: none;
+}
+
+.er-fanCard__cap {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  text-align: left;
+  color: #fff;
+}
+
+.er-fanCard__stars .er-star {
+  font-size: 12px;
+}
+
+.er-fanCard__stars .er-star.is-off {
+  color: rgba(255, 255, 255, 0.32);
+}
+
+.er-fanCard__name {
+  margin-top: 6px;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.er-fan__shell {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+}
+
+.er-fan__skeletonRow {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 14px;
+  align-items: end;
+  justify-content: center;
+}
+
+.er-skel--fanCard {
+  height: 260px;
+  border-radius: 16px;
+}
+
+@media (max-width: 720px) {
+  .er-fan,
+  .er-fan__shell {
+    grid-template-columns: 40px 1fr 40px;
+  }
+  .er-fan__track {
+    --er-fanPerView: 3;
+  }
+}
+
+@media (max-width: 520px) {
+  .er-fan,
+  .er-fan__shell {
+    grid-template-columns: 36px 1fr 36px;
+  }
+  .er-navBtn {
+    width: 34px;
+    height: 34px;
+  }
+  .er-fan__track {
+    --er-fanPerView: 1;
+  }
+}
+
 .er-card__rating .er-star {
   font-size: 11px;
 }

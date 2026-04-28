@@ -24,6 +24,16 @@
         "cards_per_view": "Cards per view"
       }
     },
+    "fan_carousel": {
+      "name": "Edge Reviews — Fan carousel",
+      "settings": {
+        "title": "Section title",
+        "accent_color": "Accent color",
+        "show_rating": "Show star rating",
+        "show_name": "Show customer name",
+        "show_badge": "Show verified badge"
+      }
+    },
     "app_embed": {
       "name": "Edge Reviews — App embed"
     }

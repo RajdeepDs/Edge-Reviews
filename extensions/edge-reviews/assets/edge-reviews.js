@@ -529,6 +529,149 @@
     window.addEventListener("resize", () => window.requestAnimationFrame(syncNav), { passive: true });
   }
 
+  function buildFanCarousel(root, data, opts) {
+    const { config, reviews, stats } = data;
+
+    const title =
+      (opts.titleOverride && String(opts.titleOverride).trim()) ||
+      (config && config.fanTitle) ||
+      "Real customer stories";
+
+    const accent =
+      (opts.accent && String(opts.accent).trim()) ||
+      (config && config.fanAccentColor) ||
+      "#111111";
+
+    const showRating = parseBool(opts.showRating, config?.fanShowRating ?? true);
+    const showName = parseBool(opts.showName, config?.fanShowName ?? true);
+    const showBadge = parseBool(opts.showBadge, config?.fanShowBadge ?? true);
+
+    root.style.setProperty("--er-accent", accent);
+    root.style.setProperty("--er-fanPerView", "5");
+
+    const all = Array.isArray(reviews) ? reviews.slice() : [];
+    const withImages = all.filter((r) => r.imageUrl);
+    const items = (withImages.length ? withImages : all).slice(0, 18);
+
+    root.innerHTML = `
+      <div class="er-widget er-widget--fan" style="--er-accent:${escapeHtml(accent)};">
+        <header class="er-fan__head">
+          <h2 class="er-h2 er-h2--center">${escapeHtml(title)}</h2>
+          <div class="er-subhead er-subhead--center">
+            <div class="er-avg">
+              ${showRating ? `${renderStars(Math.round(parseFloat(stats?.avg || "0") || 0))}` : ""}
+              <span class="er-avg__count">${escapeHtml(stats?.avg ?? "0.0")} (${escapeHtml(stats?.total ?? 0)})</span>
+              <span class="er-verified"><span class="er-verified__mark">✓</span> Verified</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="er-fan" aria-label="Customer photo reviews">
+          <button class="er-navBtn er-navBtn--ghost" type="button" data-er-prev aria-label="Previous">
+            <span aria-hidden="true">‹</span>
+          </button>
+
+          <div class="er-fan__viewport" data-er-viewport>
+            <div class="er-fan__track" data-er-track>
+              ${items
+                .map((r, idx) => {
+                  const name = r.customerName || "Customer";
+                  const img = r.imageUrl
+                    ? `<img class="er-fanCard__img" loading="lazy" src="${escapeHtml(r.imageUrl)}" alt="" />`
+                    : `<div class="er-fanCard__img er-fanCard__img--empty"></div>`;
+
+                  return `
+                    <article class="er-fanCard ${idx === 0 ? "is-center" : ""}" data-er-card>
+                      <div class="er-fanCard__media">${img}</div>
+                      <div class="er-fanCard__shade"></div>
+                      <div class="er-fanCard__cap">
+                        ${showRating ? `<div class="er-fanCard__stars">${renderStars(r.rating)}</div>` : ""}
+                        ${
+                          showName
+                            ? `<div class="er-fanCard__name">${escapeHtml(name)}${showBadge ? ` <span class="er-badge er-badge--onDark" title="Verified">✓</span>` : ""}</div>`
+                            : ""
+                        }
+                      </div>
+                    </article>
+                  `;
+                })
+                .join("")}
+            </div>
+          </div>
+
+          <button class="er-navBtn er-navBtn--ghost" type="button" data-er-next aria-label="Next">
+            <span aria-hidden="true">›</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    const viewport = qs(root, "[data-er-viewport]");
+    const track = qs(root, "[data-er-track]");
+    const btnPrev = qs(root, "[data-er-prev]");
+    const btnNext = qs(root, "[data-er-next]");
+
+    function cards() {
+      return track ? qsa(track, "[data-er-card]") : [];
+    }
+
+    function centerIndex() {
+      if (!viewport || !track) return;
+      const list = cards();
+      if (list.length === 0) return 0;
+
+      const centerX = viewport.scrollLeft + viewport.clientWidth / 2;
+      let best = null;
+      let bestDist = Infinity;
+      let bestIdx = 0;
+
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i];
+        const left = c.offsetLeft;
+        const mid = left + c.offsetWidth / 2;
+        const dist = Math.abs(mid - centerX);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = c;
+          bestIdx = i;
+        }
+      }
+
+      list.forEach((c, i) => {
+        const dist = Math.abs(i - bestIdx);
+        c.classList.toggle("is-center", dist === 0);
+        c.classList.toggle("is-near", dist === 1);
+      });
+
+      if (btnPrev && btnNext) {
+        const max = viewport.scrollWidth - viewport.clientWidth - 1;
+        btnPrev.disabled = viewport.scrollLeft <= 0;
+        btnNext.disabled = viewport.scrollLeft >= max;
+      }
+
+      return bestIdx;
+    }
+
+    function scrollToIdx(idx) {
+      if (!viewport || !track) return;
+      const list = cards();
+      const target = list[clamp(idx, 0, list.length - 1)];
+      if (!target) return;
+      const left = target.offsetLeft - (viewport.clientWidth - target.offsetWidth) / 2;
+      viewport.scrollTo({ left, behavior: "smooth" });
+    }
+
+    btnPrev?.addEventListener("click", () => scrollToIdx(centerIndex() - 1));
+    btnNext?.addEventListener("click", () => scrollToIdx(centerIndex() + 1));
+    viewport?.addEventListener("scroll", () => window.requestAnimationFrame(centerIndex), { passive: true });
+    window.setTimeout(() => {
+      // Start near the first “hero” position.
+      scrollToIdx(2);
+      window.setTimeout(() => centerIndex(), 50);
+    }, 0);
+    window.addEventListener("resize", () => window.requestAnimationFrame(centerIndex), { passive: true });
+  }
+
   async function initRoot(root) {
     if (root.__erInited) return;
     root.__erInited = true;
@@ -575,6 +718,14 @@
           maxChars,
           cardsPerView,
         });
+      } else if (widget === "fan") {
+        buildFanCarousel(root, data, {
+          titleOverride,
+          accent,
+          showRating,
+          showName,
+          showBadge,
+        });
       } else {
         buildMainWidget(root, data, {
           submitUrl,
@@ -601,7 +752,7 @@
   }
 
   function boot() {
-    const roots = qsa(document, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card']");
+    const roots = qsa(document, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card'], .er-root[data-er-widget='fan']");
     if (roots.length === 0) return;
 
     const io =
