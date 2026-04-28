@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useFetcher } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { Text, BlockStack } from "@shopify/polaris";
+import ColorField from "../components/ColorField";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
@@ -38,7 +40,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       cardTitle: get("cardTitle"), cardShowRating: bool("cardShowRating"),
       cardShowName: bool("cardShowName"), cardShowBadge: bool("cardShowBadge"),
-      cardShowProduct: bool("cardShowProduct"), cardMaxChars: num("cardMaxChars"),
+      cardShowProduct: bool("cardShowProduct"),
       cardAccentColor: get("cardAccentColor"),
 
       masonryTitle: get("masonryTitle"), masonryColumns: num("masonryColumns"),
@@ -54,7 +56,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       cardTitle: get("cardTitle"), cardShowRating: bool("cardShowRating"),
       cardShowName: bool("cardShowName"), cardShowBadge: bool("cardShowBadge"),
-      cardShowProduct: bool("cardShowProduct"), cardMaxChars: num("cardMaxChars"),
+      cardShowProduct: bool("cardShowProduct"),
       cardAccentColor: get("cardAccentColor"),
 
       masonryTitle: get("masonryTitle"), masonryColumns: num("masonryColumns"),
@@ -175,7 +177,7 @@ function FanPreview({ s }: { s: { fanTitle: string; fanShowRating: boolean; fanS
 
 // ── Preview: Card Carousel ─────────────────────────────────────────────────────
 
-function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; cardShowName: boolean; cardShowBadge: boolean; cardShowProduct: boolean; cardMaxChars: number; cardAccentColor: string } }) {
+function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; cardShowName: boolean; cardShowBadge: boolean; cardShowProduct: boolean; cardAccentColor: string } }) {
   const cards = [
     { g: GRADIENTS[3], name: "Ana Smith",     r: 5, text: "Absolutely love this! Quality exceeded my expectations.", product: "Organic Face Serum" },
     { g: GRADIENTS[4], name: "Maria Green",   r: 5, text: "Great product. Fast delivery and perfect packaging.", product: "Minimalist Watch" },
@@ -193,7 +195,7 @@ function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; c
               <div style={{ height: 90, background: c.g }} />
               <div style={{ padding: "8px 7px 10px" }}>
                 {<p style={{ fontSize: 9, color: "#6d7175", lineHeight: 1.4, margin: "0 0 5px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {c.text.slice(0, s.cardMaxChars)}
+                  {c.text}
                 </p>}
                 {s.cardShowRating && <div style={{ color: "#fbbf24", fontSize: 9, marginBottom: 3 }}>★★★★★</div>}
                 {s.cardShowName && (
@@ -273,116 +275,12 @@ function MasonryPreview({ s }: { s: { masonryTitle: string; masonryColumns: numb
   );
 }
 
-// ── Settings helpers ───────────────────────────────────────────────────────────
+// ── Widget types ───────────────────────────────────────────────────────────────
 
-function SettingRow({ label, desc, checked, onChange }: { label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #f6f6f7" }}>
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a1a" }}>{label}</div>
-        {desc && <div style={{ fontSize: 12, color: "#8c9196", marginTop: 2 }}>{desc}</div>}
-      </div>
-      <s-switch {...({ checked: checked || undefined, onClick: () => onChange(!checked) } as object)} />
-    </div>
-  );
-}
-
-function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: "#6d7175", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: 5 }}>{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{ width: "100%", padding: "7px 10px", border: "1px solid #c9cccf", borderRadius: 6, fontSize: 13, color: "#1a1a1a", outline: "none", boxSizing: "border-box" }}
-      />
-    </div>
-  );
-}
-
-function ColorInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: "#6d7175", textTransform: "uppercase", letterSpacing: "0.5px", flex: 1 }}>{label}</label>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} style={{ width: 32, height: 28, border: "1px solid #c9cccf", borderRadius: 4, cursor: "pointer", padding: 2 }} />
-        <span style={{ fontSize: 12, color: "#6d7175", fontFamily: "monospace" }}>{value}</span>
-      </div>
-    </div>
-  );
-}
-
-function NumInput({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-        <label style={{ fontSize: 12, fontWeight: 600, color: "#6d7175", textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</label>
-        <span style={{ fontSize: 12, color: "#1a1a1a", fontWeight: 600 }}>{value}</span>
-      </div>
-      <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(parseInt(e.target.value, 10))} style={{ width: "100%", accentColor: "#303030" }} />
-    </div>
-  );
-}
-
-function SelectInput({ label, value, options, onChange }: { label: string; value: string; options: { label: string; value: string }[]; onChange: (v: string) => void }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: "#6d7175", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: 5 }}>{label}</label>
-      <select value={value} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "7px 10px", border: "1px solid #c9cccf", borderRadius: 6, fontSize: 13, color: "#1a1a1a", background: "#fff", outline: "none" }}>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </div>
-  );
-}
-
-// ── Widget type selector card ──────────────────────────────────────────────────
-
-const WIDGET_TYPES: { id: WidgetType; label: string; desc: string; icon: React.ReactNode }[] = [
-  {
-    id: "fan",
-    label: "Fan Carousel",
-    desc: "Centered portrait cards with peek on sides",
-    icon: (
-      <svg viewBox="0 0 40 40" width={40} height={40} fill="none">
-        <rect x="2"  y="8"  width="11" height="24" rx="3" fill="#e1e3e5" />
-        <rect x="27" y="8"  width="11" height="24" rx="3" fill="#e1e3e5" />
-        <rect x="14" y="4"  width="12" height="32" rx="3" fill="#303030" />
-      </svg>
-    ),
-  },
-  {
-    id: "card",
-    label: "Card Carousel",
-    desc: "4 equal cards with image and review text",
-    icon: (
-      <svg viewBox="0 0 40 40" width={40} height={40} fill="none">
-        {[0,1,2,3].map((i) => (
-          <g key={i}>
-            <rect x={2 + i*10} y="6"  width="8" height="11" rx="2" fill="#303030" />
-            <rect x={2 + i*10} y="19" width="8" height="3"  rx="1" fill="#e1e3e5" />
-            <rect x={2 + i*10} y="23" width="8" height="2"  rx="1" fill="#e1e3e5" />
-            <rect x={2 + i*10} y="26" width="5" height="2"  rx="1" fill="#e1e3e5" />
-          </g>
-        ))}
-      </svg>
-    ),
-  },
-  {
-    id: "masonry",
-    label: "Masonry Grid",
-    desc: "Mixed image + text tiles in a grid",
-    icon: (
-      <svg viewBox="0 0 40 40" width={40} height={40} fill="none">
-        {[0,1,2,3].map((col) =>
-          [0,1].map((row) => (
-            <rect key={`${col}-${row}`} x={2+col*10} y={4+row*17} width="8" height="14" rx="2"
-              fill={col === 2 && row === 0 ? "#8fad88" : "#303030"} opacity={col === 2 && row === 0 ? 1 : 0.85} />
-          ))
-        )}
-      </svg>
-    ),
-  },
+const WIDGET_TYPES: { id: WidgetType; label: string }[] = [
+  { id: "fan",     label: "Fan Carousel" },
+  { id: "card",    label: "Card Carousel" },
+  { id: "masonry", label: "Masonry Grid" },
 ];
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -407,8 +305,7 @@ export default function WidgetPage() {
   const [cardShowName, setCardShowName] = useState(config?.cardShowName ?? true);
   const [cardShowBadge, setCardShowBadge] = useState(config?.cardShowBadge ?? true);
   const [cardShowProduct, setCardShowProduct] = useState(config?.cardShowProduct ?? true);
-  const [cardMaxChars, setCardMaxChars] = useState(config?.cardMaxChars ?? 120);
-  const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?? "#000000");
+const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?? "#000000");
 
   // Masonry settings
   const [masonryTitle, setMasonryTitle] = useState(config?.masonryTitle ?? "From our customers");
@@ -427,7 +324,7 @@ export default function WidgetPage() {
 
     fd.set("cardTitle", cardTitle); fd.set("cardShowRating", String(cardShowRating));
     fd.set("cardShowName", String(cardShowName)); fd.set("cardShowBadge", String(cardShowBadge));
-    fd.set("cardShowProduct", String(cardShowProduct)); fd.set("cardMaxChars", String(cardMaxChars));
+    fd.set("cardShowProduct", String(cardShowProduct));
     fd.set("cardAccentColor", cardAccentColor);
 
     fd.set("masonryTitle", masonryTitle); fd.set("masonryColumns", masonryColumns);
@@ -455,7 +352,7 @@ export default function WidgetPage() {
 
         {/* Widget type selector */}
         <s-section>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <div style={{ display: "flex", background: "#ebebeb", borderRadius: 9, padding: 3, gap: 2 }}>
             {WIDGET_TYPES.map((wt) => {
               const active = activeWidget === wt.id;
               return (
@@ -463,18 +360,19 @@ export default function WidgetPage() {
                   key={wt.id}
                   onClick={() => setActiveWidget(wt.id)}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "flex-start",
-                    gap: 10, padding: "16px 18px", borderRadius: 10, cursor: "pointer",
-                    textAlign: "left", background: active ? "#f0f7ff" : "#fff",
-                    border: `1.5px solid ${active ? "#005bd3" : "#e1e3e5"}`,
-                    transition: "all 0.15s ease",
+                    flex: 1,
+                    padding: "8px 0",
+                    borderRadius: 7, border: "none", cursor: "pointer",
+                    background: active ? "#fff" : "transparent",
+                    boxShadow: active ? "0 1px 3px rgba(0,0,0,0.1), 0 0 0 0.5px rgba(0,0,0,0.06)" : "none",
+                    fontSize: 13,
+                    fontWeight: active ? 600 : 500,
+                    color: active ? "#1a1a1a" : "#8c9196",
+                    transition: "background 0.15s, box-shadow 0.15s, color 0.15s",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  {wt.icon}
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#005bd3" : "#1a1a1a", marginBottom: 3 }}>{wt.label}</div>
-                    <div style={{ fontSize: 12, color: "#8c9196", lineHeight: 1.4 }}>{wt.desc}</div>
-                  </div>
+                  {wt.label}
                 </button>
               );
             })}
@@ -490,13 +388,25 @@ export default function WidgetPage() {
             {activeWidget === "fan" && (
               <>
                 <s-section heading="General">
-                  <TextInput label="Section title" value={fanTitle} onChange={setFanTitle} />
-                  <ColorInput label="Accent color" value={fanAccentColor} onChange={setFanAccentColor} />
+                  <s-text-field label="Section title" {...({ value: fanTitle, onInput: (e: Event) => setFanTitle((e.target as HTMLInputElement).value) } as object)} />
+                  <BlockStack gap="100">
+                    <Text as="p" variant="bodyMd">Accent color</Text>
+                    <ColorField value={fanAccentColor} onChange={setFanAccentColor} />
+                  </BlockStack>
                 </s-section>
                 <s-section heading="Display">
-                  <SettingRow label="Show star rating"    checked={fanShowRating} onChange={setFanShowRating} />
-                  <SettingRow label="Show customer name"  checked={fanShowName}   onChange={setFanShowName} />
-                  <SettingRow label="Show verified badge" checked={fanShowBadge}  onChange={setFanShowBadge} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show star rating</Text>
+                    <s-switch checked={fanShowRating} onInput={() => setFanShowRating(!fanShowRating)} accessibilityLabel="Toggle show star rating" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show customer name</Text>
+                    <s-switch checked={fanShowName} onInput={() => setFanShowName(!fanShowName)} accessibilityLabel="Toggle show customer name" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show verified badge</Text>
+                    <s-switch checked={fanShowBadge} onInput={() => setFanShowBadge(!fanShowBadge)} accessibilityLabel="Toggle show verified badge" />
+                  </div>
                 </s-section>
               </>
             )}
@@ -504,17 +414,29 @@ export default function WidgetPage() {
             {activeWidget === "card" && (
               <>
                 <s-section heading="General">
-                  <TextInput label="Section title" value={cardTitle} onChange={setCardTitle} />
-                  <ColorInput label="Accent color" value={cardAccentColor} onChange={setCardAccentColor} />
-                </s-section>
-                <s-section heading="Layout">
-                  <NumInput label="Max review characters" value={cardMaxChars} min={60} max={300} onChange={setCardMaxChars} />
+                  <s-text-field label="Section title" {...({ value: cardTitle, onInput: (e: Event) => setCardTitle((e.target as HTMLInputElement).value) } as object)} />
+                  <BlockStack gap="100">
+                    <Text as="p" variant="bodyMd">Accent color</Text>
+                    <ColorField value={cardAccentColor} onChange={setCardAccentColor} />
+                  </BlockStack>
                 </s-section>
                 <s-section heading="Display">
-                  <SettingRow label="Show star rating"    checked={cardShowRating}   onChange={setCardShowRating} />
-                  <SettingRow label="Show customer name"  checked={cardShowName}     onChange={setCardShowName} />
-                  <SettingRow label="Show verified badge" checked={cardShowBadge}    onChange={setCardShowBadge} />
-                  <SettingRow label="Show product name"   checked={cardShowProduct}  onChange={setCardShowProduct} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show star rating</Text>
+                    <s-switch checked={cardShowRating} onInput={() => setCardShowRating(!cardShowRating)} accessibilityLabel="Toggle show star rating" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show customer name</Text>
+                    <s-switch checked={cardShowName} onInput={() => setCardShowName(!cardShowName)} accessibilityLabel="Toggle show customer name" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show verified badge</Text>
+                    <s-switch checked={cardShowBadge} onInput={() => setCardShowBadge(!cardShowBadge)} accessibilityLabel="Toggle show verified badge" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show product name</Text>
+                    <s-switch checked={cardShowProduct} onInput={() => setCardShowProduct(!cardShowProduct)} accessibilityLabel="Toggle show product name" />
+                  </div>
                 </s-section>
               </>
             )}
@@ -522,22 +444,43 @@ export default function WidgetPage() {
             {activeWidget === "masonry" && (
               <>
                 <s-section heading="General">
-                  <TextInput label="Section title" value={masonryTitle} onChange={setMasonryTitle} />
-                  <ColorInput label="Text tile color"   value={masonryTileColor}    onChange={setMasonryTileColor} />
-                  <ColorInput label="Accent color"      value={masonryAccentColor}  onChange={setMasonryAccentColor} />
+                  <s-text-field label="Section title" {...({ value: masonryTitle, onInput: (e: Event) => setMasonryTitle((e.target as HTMLInputElement).value) } as object)} />
+                  <BlockStack gap="100">
+                    <Text as="p" variant="bodyMd">Text tile color</Text>
+                    <ColorField value={masonryTileColor} onChange={setMasonryTileColor} />
+                  </BlockStack>
+                  <BlockStack gap="100">
+                    <Text as="p" variant="bodyMd">Accent color</Text>
+                    <ColorField value={masonryAccentColor} onChange={setMasonryAccentColor} />
+                  </BlockStack>
                 </s-section>
                 <s-section heading="Layout">
-                  <SelectInput
-                    label="Columns"
-                    value={masonryColumns}
-                    onChange={setMasonryColumns}
-                    options={[{ label: "3 columns", value: "3" }, { label: "4 columns", value: "4" }]}
-                  />
+                  <BlockStack gap="200">
+                    <Text as="span" variant="bodyMd">Columns</Text>
+                    <s-select
+                      label="Columns"
+                      labelAccessibilityVisibility="exclusive"
+                      value={masonryColumns}
+                      onInput={(e: Event) => setMasonryColumns((e.target as HTMLSelectElement).value)}
+                    >
+                      <s-option value="3">3 columns</s-option>
+                      <s-option value="4">4 columns</s-option>
+                    </s-select>
+                  </BlockStack>
                 </s-section>
                 <s-section heading="Display">
-                  <SettingRow label="Show star rating"    checked={masonryShowRating} onChange={setMasonryShowRating} />
-                  <SettingRow label="Show customer name"  checked={masonryShowName}   onChange={setMasonryShowName} />
-                  <SettingRow label="Show verified badge" checked={masonryShowBadge}  onChange={setMasonryShowBadge} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show star rating</Text>
+                    <s-switch checked={masonryShowRating} onInput={() => setMasonryShowRating(!masonryShowRating)} accessibilityLabel="Toggle show star rating" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show customer name</Text>
+                    <s-switch checked={masonryShowName} onInput={() => setMasonryShowName(!masonryShowName)} accessibilityLabel="Toggle show customer name" />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text as="p" variant="bodyMd">Show verified badge</Text>
+                    <s-switch checked={masonryShowBadge} onInput={() => setMasonryShowBadge(!masonryShowBadge)} accessibilityLabel="Toggle show verified badge" />
+                  </div>
                 </s-section>
               </>
             )}
@@ -551,7 +494,7 @@ export default function WidgetPage() {
                 <FanPreview s={{ fanTitle, fanShowRating, fanShowName, fanShowBadge }} />
               )}
               {activeWidget === "card" && (
-                <CardPreview s={{ cardTitle, cardShowRating, cardShowName, cardShowBadge, cardShowProduct, cardMaxChars, cardAccentColor }} />
+                <CardPreview s={{ cardTitle, cardShowRating, cardShowName, cardShowBadge, cardShowProduct, cardAccentColor }} />
               )}
               {activeWidget === "masonry" && (
                 <MasonryPreview s={{ masonryTitle, masonryColumns: parseInt(masonryColumns, 10), masonryShowRating, masonryShowName, masonryShowBadge, masonryTileColor, masonryAccentColor }} />
