@@ -41,6 +41,9 @@
     return parts.map((p) => p[0].toUpperCase()).join("");
   }
 
+  const SVG_CHEVRON_RIGHT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="12" height="12" aria-hidden="true" focusable="false" style="display:block"><path fill="currentColor" d="M361.891,242.03L187.347,9.31c-7.714-10.283-22.298-12.365-32.582-4.655c-10.283,7.713-12.367,22.3-4.655,32.582l164.072,218.758L150.111,474.762c-7.713,10.282-5.627,24.871,4.655,32.582c4.186,3.14,9.086,4.656,13.945,4.656c7.076,0,14.064-3.215,18.637-9.311l174.544-232.732C368.097,261.683,368.097,250.304,361.891,242.03z"/></svg>`;
+  const SVG_CHEVRON_LEFT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="12" height="12" aria-hidden="true" focusable="false" style="display:block;transform:scaleX(-1)"><path fill="currentColor" d="M361.891,242.03L187.347,9.31c-7.714-10.283-22.298-12.365-32.582-4.655c-10.283,7.713-12.367,22.3-4.655,32.582l164.072,218.758L150.111,474.762c-7.713,10.282-5.627,24.871,4.655,32.582c4.186,3.14,9.086,4.656,13.945,4.656c7.076,0,14.064-3.215,18.637-9.311l174.544-232.732C368.097,261.683,368.097,250.304,361.891,242.03z"/></svg>`;
+
   const SVG_STAR_FILLED = `<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><path d="M22,9.81a1,1,0,0,0-.83-.69l-5.7-.78L12.88,3.53a1,1,0,0,0-1.76,0L8.57,8.34l-5.7.78a1,1,0,0,0-.82.69,1,1,0,0,0,.28,1l4.09,3.73-1,5.24A1,1,0,0,0,6.88,20.9L12,18.38l5.12,2.52a1,1,0,0,0,.44.1,1,1,0,0,0,1-1.18l-1-5.24,4.09-3.73A1,1,0,0,0,22,9.81Z" fill="currentColor"/></svg>`;
   const SVG_STAR_EMPTY = `<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><polygon points="12 4 9.22 9.27 3 10.11 7.5 14.21 6.44 20 12 17.27 17.56 20 16.5 14.21 21 10.11 14.78 9.27 12 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>`;
   const SVG_VERIFIED = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path fill-rule="evenodd" clip-rule="evenodd" d="M21.007 8.27C22.194 9.125 23 10.45 23 12c0 1.55-.806 2.876-1.993 3.73.24 1.442-.134 2.958-1.227 4.05-1.095 1.095-2.61 1.459-4.046 1.225C14.883 22.196 13.546 23 12 23c-1.55 0-2.878-.807-3.731-1.996-1.438.235-2.954-.128-4.05-1.224-1.095-1.095-1.459-2.611-1.217-4.05C1.816 14.877 1 13.551 1 12s.816-2.878 2.002-3.73c-.242-1.439.122-2.955 1.218-4.05 1.093-1.094 2.61-1.467 4.057-1.227C9.125 1.804 10.453 1 12 1c1.545 0 2.88.803 3.732 1.993 1.442-.24 2.956.135 4.048 1.227 1.093 1.092 1.468 2.608 1.227 4.05Zm-4.426-.084a1 1 0 0 1 .233 1.395l-5 7a1 1 0 0 1-1.521.126l-3-3a1 1 0 0 1 1.414-1.414l2.165 2.165 4.314-6.04a1 1 0 0 1 1.395-.232Z" fill="#1d9bf0"/></svg>`;
@@ -450,9 +453,7 @@
         </header>
 
         <div class="er-cardCarousel" aria-label="Reviews carousel">
-          <button class="er-navBtn" type="button" data-er-prev aria-label="Previous reviews">
-            <span aria-hidden="true">‹</span>
-          </button>
+          <button class="er-navBtn" type="button" data-er-prev aria-label="Previous reviews">${SVG_CHEVRON_LEFT}</button>
 
           <div class="er-cardCarousel__viewport" data-er-viewport>
             <div class="er-cardCarousel__track" data-er-track>
@@ -473,10 +474,9 @@
                         ${showRating ? `<div class="er-cardC__rating">${renderStars(r.rating)}</div>` : ""}
                         ${
                           showName
-                            ? `<div class="er-cardC__name">${escapeHtml(name)}${showBadge ? ` <span class="er-badge" title="Verified">✓</span>` : ""}</div>`
+                            ? `<div class="er-cardC__name">${escapeHtml(name)}${showBadge ? ` ${SVG_VERIFIED}` : ""}</div>`
                             : ""
                         }
-                        ${showProduct && productTitle ? `<div class="er-cardC__product">${escapeHtml(productTitle)}</div>` : ""}
                       </div>
                     </article>
                   `;
@@ -485,9 +485,7 @@
             </div>
           </div>
 
-          <button class="er-navBtn" type="button" data-er-next aria-label="Next reviews">
-            <span aria-hidden="true">›</span>
-          </button>
+          <button class="er-navBtn" type="button" data-er-next aria-label="Next reviews">${SVG_CHEVRON_RIGHT}</button>
         </div>
       </div>
     `;
@@ -564,9 +562,7 @@
         </header>
 
         <div class="er-fan" aria-label="Customer photo reviews">
-          <button class="er-navBtn er-navBtn--ghost" type="button" data-er-prev aria-label="Previous">
-            <span aria-hidden="true">‹</span>
-          </button>
+          <button class="er-navBtn er-navBtn--ghost" type="button" data-er-prev aria-label="Previous">${SVG_CHEVRON_LEFT}</button>
 
           <div class="er-fan__viewport" data-er-viewport>
             <div class="er-fan__track" data-er-track>
@@ -596,9 +592,7 @@
             </div>
           </div>
 
-          <button class="er-navBtn er-navBtn--ghost" type="button" data-er-next aria-label="Next">
-            <span aria-hidden="true">›</span>
-          </button>
+          <button class="er-navBtn er-navBtn--ghost" type="button" data-er-next aria-label="Next">${SVG_CHEVRON_RIGHT}</button>
         </div>
       </div>
     `;
