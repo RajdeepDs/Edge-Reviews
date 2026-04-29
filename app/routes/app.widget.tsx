@@ -137,6 +137,27 @@ function Stars({ n, size = 14, color = "#f59e0b", emptyColor = "rgba(200,200,200
   );
 }
 
+function VerifiedBadgeIcon({ size = 16, color = "#000000" }: { size?: number; color?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M21.007 8.27C22.194 9.125 23 10.45 23 12c0 1.55-.806 2.876-1.993 3.73.24 1.442-.134 2.958-1.227 4.05-1.095 1.095-2.61 1.459-4.046 1.225C14.883 22.196 13.546 23 12 23c-1.55 0-2.878-.807-3.731-1.996-1.438.235-2.954-.128-4.05-1.224-1.095-1.095-1.459-2.611-1.217-4.05C1.816 14.877 1 13.551 1 12s.816-2.878 2.002-3.73c-.242-1.439.122-2.955 1.218-4.05 1.093-1.094 2.61-1.467 4.057-1.227C9.125 1.804 10.453 1 12 1c1.545 0 2.88.803 3.732 1.993 1.442-.24 2.956.135 4.048 1.227 1.093 1.092 1.468 2.608 1.227 4.05Zm-4.426-.084a1 1 0 0 1 .233 1.395l-5 7a1 1 0 0 1-1.521.126l-3-3a1 1 0 0 1 1.414-1.414l2.165 2.165 4.314-6.04a1 1 0 0 1 1.395-.232Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 function AggHeader({ title, badge }: { title: string; badge: boolean }) {
   return (
     <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -174,6 +195,30 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
     { star: 3, pct: 0 },
     { star: 2, pct: 0 },
     { star: 1, pct: 0 },
+  ];
+  const featureCards = [
+    {
+      name: "Ayan",
+      rating: 4,
+      title: "OxyEnergy is now part of my daily routine",
+      excerpt:
+        "I was hesitant at first, but OxyEnergy exceeded my expectations. Within a couple of weeks, I noticed reduced bloating and a much lighter feeling throughout the day.",
+      product: "The Multi-managed Snowboard",
+      hair: "#dd7a38",
+      sweater: "#c96f31",
+      bg: "linear-gradient(135deg, #f5e8dd 0%, #f0dfd1 38%, #c88b56 100%)",
+    },
+    {
+      name: "Mira",
+      rating: 5,
+      title: "Gentle, effective, and easy to stay consistent with",
+      excerpt:
+        "The capsules have become the easiest wellness habit in my routine. I feel lighter after meals, my energy feels stable, and I love how simple it is to keep up.",
+      product: "Balance Blend Essentials",
+      hair: "#5c402f",
+      sweater: "#9b8664",
+      bg: "linear-gradient(135deg, #ebe5dc 0%, #d9ccb9 42%, #9b8664 100%)",
+    },
   ];
 
   return (
@@ -228,17 +273,197 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
         </select>
       </div>
 
-      <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} style={{ border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden", background: "#fff" }}>
-            <div style={{ height: 110, background: GRADIENTS[(i + 2) % GRADIENTS.length] }} />
-            <div style={{ padding: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 750, color: "#111827" }}>Customer</div>
-                <Stars n={5} size={12} color="#f59e0b" />
+      <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
+        {featureCards.map((card, i) => (
+          <div
+            key={i}
+            style={{
+              border: "1px solid rgba(109, 85, 42, 0.18)",
+              borderRadius: 24,
+              overflow: "hidden",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,244,238,0.98) 100%)",
+              boxShadow: "0 14px 28px rgba(93, 63, 19, 0.08)",
+            }}
+          >
+            <div
+              style={{
+                height: 220,
+                background: card.bg,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 12,
+                  borderRadius: 20,
+                  border: "1px solid rgba(255,255,255,0.45)",
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.02))",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 22,
+                  bottom: 0,
+                  width: 118,
+                  height: 168,
+                  borderRadius: "72px 72px 0 0",
+                  background: "linear-gradient(180deg, #f7e5d8, #efc8af)",
+                  boxShadow: "0 16px 30px rgba(94, 48, 13, 0.15)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 18,
+                  bottom: 120,
+                  width: 126,
+                  height: 118,
+                  borderRadius: "62px 62px 56px 56px",
+                  background: card.hair,
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 44,
+                  bottom: 132,
+                  width: 76,
+                  height: 92,
+                  borderRadius: "40px 40px 48px 48px",
+                  background: "linear-gradient(180deg, #f8e4d4, #edc9af)",
+                  boxShadow: "inset 0 -8px 14px rgba(186, 122, 75, 0.12)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 18,
+                  bottom: 6,
+                  width: 138,
+                  height: 112,
+                  borderRadius: "28px 28px 0 0",
+                  background: card.sweater,
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  right: 18,
+                  top: 28,
+                  width: 84,
+                  height: 132,
+                  borderRadius: 18,
+                  background: "rgba(255,255,255,0.88)",
+                  border: "1px solid rgba(91, 67, 33, 0.15)",
+                  boxShadow: "0 18px 28px rgba(88, 63, 35, 0.12)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 52,
+                    height: 14,
+                    borderRadius: "0 0 10px 10px",
+                    background: "#f3f0ea",
+                    margin: "0 auto",
+                    borderLeft: "1px solid rgba(91, 67, 33, 0.1)",
+                    borderRight: "1px solid rgba(91, 67, 33, 0.1)",
+                    borderBottom: "1px solid rgba(91, 67, 33, 0.1)",
+                  }}
+                />
+                <div style={{ padding: "12px 10px 10px" }}>
+                  <div style={{ fontSize: 9, color: "#54422e", writingMode: "vertical-rl", position: "absolute", left: 7, top: 28, letterSpacing: "0.04em" }}>
+                    OxyEnergy
+                  </div>
+                  <div style={{ marginLeft: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#2d241b", color: "#fff", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                        OE
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 26, fontSize: 9, lineHeight: 1.15, color: "#54422e", fontWeight: 600 }}>
+                      OxyEnergy
+                      <br />
+                      Health
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 7, lineHeight: 1.25, color: "#6d6253" }}>
+                      Daily Wellness
+                      <br />
+                      Supplement
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 9,
+                        height: 28,
+                        borderRadius: 9,
+                        background: "linear-gradient(180deg, #dac894, #c8af70)",
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: "#6d7175", marginTop: 6, lineHeight: 1.35 }}>
-                Great product. Would buy again.
+            </div>
+
+            <div style={{ padding: "20px 20px 18px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      border: "1.5px solid rgba(0,0,0,0.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 18,
+                      fontFamily: "Georgia, serif",
+                      color: "#1a1a1a",
+                      background: "linear-gradient(145deg, #f9f6f1, #eee8df)",
+                      flexShrink: 0,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {card.name.charAt(0)}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#171717" }}>{card.name}</div>
+                      <VerifiedBadgeIcon size={15} color="#1d9bf0" />
+                    </div>
+                  </div>
+                </div>
+                <Stars n={card.rating} size={14} color="#f59e0b" emptyColor="rgba(200,180,120,0.4)" />
+              </div>
+
+              <div style={{ marginTop: 14, fontSize: 16, lineHeight: 1.3, fontWeight: 750, color: "#111", letterSpacing: "-0.01em" }}>
+                {card.title}
+              </div>
+
+              <p
+                style={{
+                  margin: "10px 0 0",
+                  fontSize: 13,
+                  lineHeight: 1.7,
+                  color: "#3a3a3a",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 4,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {card.excerpt}
+              </p>
+
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: s.mainAccentColor, flexShrink: 0 }} />
+                <div style={{ fontSize: 11, color: "#6d7175", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {card.product}
+                </div>
               </div>
             </div>
           </div>

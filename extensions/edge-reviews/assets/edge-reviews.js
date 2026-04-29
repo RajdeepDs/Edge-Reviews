@@ -41,11 +41,15 @@
     return parts.map((p) => p[0].toUpperCase()).join("");
   }
 
+  const SVG_STAR_FILLED = `<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><path d="M22,9.81a1,1,0,0,0-.83-.69l-5.7-.78L12.88,3.53a1,1,0,0,0-1.76,0L8.57,8.34l-5.7.78a1,1,0,0,0-.82.69,1,1,0,0,0,.28,1l4.09,3.73-1,5.24A1,1,0,0,0,6.88,20.9L12,18.38l5.12,2.52a1,1,0,0,0,.44.1,1,1,0,0,0,1-1.18l-1-5.24,4.09-3.73A1,1,0,0,0,22,9.81Z" fill="currentColor"/></svg>`;
+  const SVG_STAR_EMPTY = `<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><polygon points="12 4 9.22 9.27 3 10.11 7.5 14.21 6.44 20 12 17.27 17.56 20 16.5 14.21 21 10.11 14.78 9.27 12 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>`;
+  const SVG_VERIFIED = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path fill-rule="evenodd" clip-rule="evenodd" d="M21.007 8.27C22.194 9.125 23 10.45 23 12c0 1.55-.806 2.876-1.993 3.73.24 1.442-.134 2.958-1.227 4.05-1.095 1.095-2.61 1.459-4.046 1.225C14.883 22.196 13.546 23 12 23c-1.55 0-2.878-.807-3.731-1.996-1.438.235-2.954-.128-4.05-1.224-1.095-1.095-1.459-2.611-1.217-4.05C1.816 14.877 1 13.551 1 12s.816-2.878 2.002-3.73c-.242-1.439.122-2.955 1.218-4.05 1.093-1.094 2.61-1.467 4.057-1.227C9.125 1.804 10.453 1 12 1c1.545 0 2.88.803 3.732 1.993 1.442-.24 2.956.135 4.048 1.227 1.093 1.092 1.468 2.608 1.227 4.05Zm-4.426-.084a1 1 0 0 1 .233 1.395l-5 7a1 1 0 0 1-1.521.126l-3-3a1 1 0 0 1 1.414-1.414l2.165 2.165 4.314-6.04a1 1 0 0 1 1.395-.232Z" fill="#1d9bf0"/></svg>`;
+
   function renderStars(rating) {
     const n = clamp(parseInt(rating, 10) || 0, 0, 5);
     let out = "";
     for (let i = 1; i <= 5; i++) {
-      out += `<span class="er-star ${i <= n ? "is-on" : "is-off"}" aria-hidden="true">★</span>`;
+      out += `<span class="er-star ${i <= n ? "is-on" : "is-off"}" aria-hidden="true">${i <= n ? SVG_STAR_FILLED : SVG_STAR_EMPTY}</span>`;
     }
     return `<span class="er-stars" aria-label="${n} out of 5 stars">${out}</span>`;
   }
@@ -145,7 +149,7 @@
                     return `
                       <div class="er-break__row">
                         <span class="er-break__label">${star}</span>
-                        <span class="er-break__stars" aria-hidden="true">★</span>
+                        <span class="er-break__stars" aria-hidden="true">${SVG_STAR_FILLED}</span>
                         <div class="er-break__bar" role="img" aria-label="${star} stars: ${row.count} reviews (${row.pct}%)">
                           <div class="er-break__fill" style="width:${clamp(row.pct || 0, 0, 100)}%"></div>
                         </div>
@@ -272,7 +276,6 @@
             const img = r.imageUrl ? `<img class="er-card__img" loading="lazy" src="${escapeHtml(r.imageUrl)}" alt="" />` : "";
             const media = img ? `<div class="er-card__media">${img}</div>` : "";
             const avatar = `<div class="er-avatar" aria-hidden="true">${escapeHtml(initials(name))}</div>`;
-            const date = r.createdAt ? `<span class="er-date">${escapeHtml(formatDate(r.createdAt))}</span>` : "";
 
             return `
               <article class="er-card">
@@ -282,8 +285,7 @@
                     <div class="er-person">
                       ${avatar}
                       <div class="er-person__meta">
-                        <div class="er-person__name">${escapeHtml(name)} <span class="er-badge" title="Verified">✓</span></div>
-                        <div class="er-person__sub">${date}</div>
+                        <div class="er-person__name">${escapeHtml(name)} ${SVG_VERIFIED}</div>
                       </div>
                     </div>
                     <div class="er-card__rating">${renderStars(r.rating)}</div>
@@ -294,11 +296,6 @@
                       : ""
                   }
                   <div class="er-card__text">${escapeHtml(body)}</div>
-                  ${
-                    productTitle
-                      ? `<div class="er-card__product">${escapeHtml(productTitle)}</div>`
-                      : ""
-                  }
                 </div>
               </article>
             `;
