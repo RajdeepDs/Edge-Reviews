@@ -96,15 +96,6 @@ model WidgetConfig {
   cardMaxChars      Int     @default(120)
   cardAccentColor   String  @default("#000000")
 
-  // Masonry Grid
-  masonryTitle      String  @default("From our customers")
-  masonryColumns    Int     @default(4)
-  masonryShowRating Boolean @default(true)
-  masonryShowName   Boolean @default(true)
-  masonryShowBadge  Boolean @default(true)
-  masonryTileColor  String  @default("#8fad88")
-  masonryAccentColor String @default("#000000")
-
   updatedAt DateTime @updatedAt
 }
 
