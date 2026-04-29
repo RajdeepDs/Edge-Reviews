@@ -10,7 +10,7 @@ import prisma from "../db.server";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type WidgetType = "main" | "fan" | "card";
+type WidgetType = "main" | "card";
 
 // ── Loader ─────────────────────────────────────────────────────────────────────
 
@@ -42,10 +42,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       mainPageSize: num("mainPageSize"),
       mainAccentColor: get("mainAccentColor"),
 
-      fanTitle: get("fanTitle"), fanShowRating: bool("fanShowRating"),
-      fanShowName: bool("fanShowName"), fanShowBadge: bool("fanShowBadge"),
-      fanAccentColor: get("fanAccentColor"),
-
       cardTitle: get("cardTitle"), cardShowRating: bool("cardShowRating"),
       cardShowName: bool("cardShowName"), cardShowBadge: bool("cardShowBadge"),
       cardShowProduct: bool("cardShowProduct"),
@@ -61,10 +57,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       mainDefaultSort: get("mainDefaultSort"),
       mainPageSize: num("mainPageSize"),
       mainAccentColor: get("mainAccentColor"),
-
-      fanTitle: get("fanTitle"), fanShowRating: bool("fanShowRating"),
-      fanShowName: bool("fanShowName"), fanShowBadge: bool("fanShowBadge"),
-      fanAccentColor: get("fanAccentColor"),
 
       cardTitle: get("cardTitle"), cardShowRating: bool("cardShowRating"),
       cardShowName: bool("cardShowName"), cardShowBadge: bool("cardShowBadge"),
@@ -473,62 +465,6 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
   );
 }
 
-// ── Preview: Fan Carousel ──────────────────────────────────────────────────────
-
-function FanPreview({ s }: { s: { fanTitle: string; fanShowRating: boolean; fanShowName: boolean; fanShowBadge: boolean } }) {
-  const cards = [
-    { g: GRADIENTS[0], name: "Jennifer Long", r: 5 },
-    { g: GRADIENTS[1], name: "Sarah Smith",   r: 5 },
-    { g: GRADIENTS[2], name: "Emily Johnson", r: 4 },
-  ];
-  return (
-    <div style={{ padding: "24px 16px" }}>
-      <AggHeader title={s.fanTitle} badge={s.fanShowBadge} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-        <ArrowBtn dir="left" />
-        {/* Left peek */}
-        <div style={{
-          width: 110, height: 170, borderRadius: 12, background: cards[0].g,
-          flexShrink: 0, position: "relative", overflow: "hidden",
-          transform: "translateY(18px)", opacity: 0.65,
-        }}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65), transparent)", padding: "12px 8px 8px" }}>
-            {s.fanShowRating && <Stars n={cards[0].r} size={11} />}
-            {s.fanShowName && <div style={{ color: "#fff", fontSize: 9, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cards[0].name}</div>}
-          </div>
-        </div>
-        {/* Center */}
-        <div style={{
-          width: 150, height: 230, borderRadius: 14, background: cards[1].g,
-          flexShrink: 0, position: "relative", overflow: "hidden",
-          boxShadow: "0 8px 28px rgba(0,0,0,0.22)",
-        }}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)", padding: "16px 12px 12px" }}>
-            {s.fanShowRating && <Stars n={cards[1].r} size={15} />}
-            {s.fanShowName && (
-              <div style={{ color: "#fff", fontSize: 12, fontWeight: 700, marginTop: 3 }}>
-                {cards[1].name}{s.fanShowBadge && <span style={{ color: "#4ade80", marginLeft: 4, fontSize: 10 }}>✓</span>}
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Right peek */}
-        <div style={{
-          width: 110, height: 170, borderRadius: 12, background: cards[2].g,
-          flexShrink: 0, position: "relative", overflow: "hidden",
-          transform: "translateY(18px)", opacity: 0.65,
-        }}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65), transparent)", padding: "12px 8px 8px" }}>
-            {s.fanShowRating && <Stars n={cards[2].r} size={11} />}
-            {s.fanShowName && <div style={{ color: "#fff", fontSize: 9, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cards[2].name}</div>}
-          </div>
-        </div>
-        <ArrowBtn dir="right" />
-      </div>
-    </div>
-  );
-}
-
 // ── Preview: Card Carousel ─────────────────────────────────────────────────────
 
 function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; cardShowName: boolean; cardShowBadge: boolean; cardShowProduct: boolean; cardAccentColor: string } }) {
@@ -571,9 +507,8 @@ function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; c
 // ── Widget types ───────────────────────────────────────────────────────────────
 
 const WIDGET_TYPES: { id: WidgetType; label: string }[] = [
-  { id: "main",    label: "Main Widget" },
-  { id: "fan",     label: "Fan Carousel" },
-  { id: "card",    label: "Card Carousel" },
+  { id: "main", label: "Main Widget" },
+  { id: "card", label: "Card Carousel" },
 ];
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -594,13 +529,6 @@ export default function WidgetPage() {
   const [mainPageSize, setMainPageSize] = useState(String(config?.mainPageSize ?? 20));
   const [mainAccentColor, setMainAccentColor] = useState(config?.mainAccentColor ?? "#111111");
 
-  // Fan settings
-  const [fanTitle, setFanTitle] = useState(config?.fanTitle ?? "From our customers");
-  const [fanShowRating, setFanShowRating] = useState(config?.fanShowRating ?? true);
-  const [fanShowName, setFanShowName] = useState(config?.fanShowName ?? true);
-  const [fanShowBadge, setFanShowBadge] = useState(config?.fanShowBadge ?? true);
-  const [fanAccentColor, setFanAccentColor] = useState(config?.fanAccentColor ?? "#ffffff");
-
   // Card settings
   const [cardTitle, setCardTitle] = useState(config?.cardTitle ?? "What our customers say");
   const [cardShowRating, setCardShowRating] = useState(config?.cardShowRating ?? true);
@@ -618,10 +546,6 @@ export default function WidgetPage() {
     fd.set("mainDefaultSort", mainDefaultSort);
     fd.set("mainPageSize", mainPageSize);
     fd.set("mainAccentColor", mainAccentColor);
-
-    fd.set("fanTitle", fanTitle); fd.set("fanShowRating", String(fanShowRating));
-    fd.set("fanShowName", String(fanShowName)); fd.set("fanShowBadge", String(fanShowBadge));
-    fd.set("fanAccentColor", fanAccentColor);
 
     fd.set("cardTitle", cardTitle); fd.set("cardShowRating", String(cardShowRating));
     fd.set("cardShowName", String(cardShowName)); fd.set("cardShowBadge", String(cardShowBadge));
@@ -735,32 +659,6 @@ export default function WidgetPage() {
               </>
             )}
 
-            {activeWidget === "fan" && (
-              <>
-                <s-section heading="General">
-                  <s-text-field label="Section title" {...({ value: fanTitle, onInput: (e: Event) => setFanTitle((e.target as HTMLInputElement).value) } as object)} />
-                  <BlockStack gap="100">
-                    <Text as="p" variant="bodyMd">Accent color</Text>
-                    <ColorField value={fanAccentColor} onChange={setFanAccentColor} />
-                  </BlockStack>
-                </s-section>
-                <s-section heading="Display">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text as="p" variant="bodyMd">Show star rating</Text>
-                    <s-switch checked={fanShowRating} onInput={() => setFanShowRating(!fanShowRating)} accessibilityLabel="Toggle show star rating" />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text as="p" variant="bodyMd">Show customer name</Text>
-                    <s-switch checked={fanShowName} onInput={() => setFanShowName(!fanShowName)} accessibilityLabel="Toggle show customer name" />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text as="p" variant="bodyMd">Show verified badge</Text>
-                    <s-switch checked={fanShowBadge} onInput={() => setFanShowBadge(!fanShowBadge)} accessibilityLabel="Toggle show verified badge" />
-                  </div>
-                </s-section>
-              </>
-            )}
-
             {activeWidget === "card" && (
               <>
                 <s-section heading="General">
@@ -810,9 +708,6 @@ export default function WidgetPage() {
               <div style={{ backgroundColor: "#f9fafb", minHeight: 420 }}>
                 {activeWidget === "main" && (
                   <MainPreview s={{ mainTitle, mainShowWriteButton, mainShowBreakdown, mainShowWithPhotosFilter, mainDefaultSort, mainPageSize, mainAccentColor }} />
-                )}
-                {activeWidget === "fan" && (
-                  <FanPreview s={{ fanTitle, fanShowRating, fanShowName, fanShowBadge }} />
                 )}
                 {activeWidget === "card" && (
                   <CardPreview s={{ cardTitle, cardShowRating, cardShowName, cardShowBadge, cardShowProduct, cardAccentColor }} />
