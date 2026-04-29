@@ -812,27 +812,6 @@
   overflow: hidden;
 }
 
-.er-card__product {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(15, 23, 42, 0.07);
-  font-size: 12px;
-  color: var(--er-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.er-card__product-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--er-accent);
-  flex-shrink: 0;
-}
 
 .er-foot {
   display: flex;
