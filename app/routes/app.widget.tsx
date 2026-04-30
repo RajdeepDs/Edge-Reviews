@@ -233,7 +233,7 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
             <div style={{ height: 220, background: "linear-gradient(160deg, #e5e7eb 0%, #d1d5db 100%)" }} />
 
             <div style={{ padding: "20px 20px 18px" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                   <div
                     style={{
