@@ -106,6 +106,7 @@ model ShopSettings {
   confirmedWorking Boolean  @default(false)
   autoPublish      Boolean  @default(false)
   widgetEnabled    Boolean  @default(true)
+  plan             String   @default("free")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

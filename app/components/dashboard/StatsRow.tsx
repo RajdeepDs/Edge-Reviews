@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Stars } from "../Stars";
 
 interface DashboardStats {
   totalReviews: number;
@@ -12,16 +13,11 @@ interface StatsRowProps {
 }
 
 export function StatsRow({ stats }: StatsRowProps) {
-  const cards = [
+  const simpleCards = [
     {
       label: "Total Reviews",
       value: stats.totalReviews > 0 ? stats.totalReviews.toLocaleString() : "—",
       sub: "All time",
-    },
-    {
-      label: "Average Rating",
-      value: stats.totalReviews > 0 ? `${stats.averageRating.toFixed(1)} ★` : "—",
-      sub: "Out of 5.0",
     },
     {
       label: "Published Reviews",
@@ -32,7 +28,7 @@ export function StatsRow({ stats }: StatsRowProps) {
 
   return (
     <s-grid gridTemplateColumns="repeat(4, 1fr)" gap="base">
-      {cards.map((card) => (
+      {simpleCards.map((card) => (
         <s-section key={card.label}>
           <s-stack gap="small-200">
             <s-text color="subdued">{card.label}</s-text>
@@ -41,6 +37,22 @@ export function StatsRow({ stats }: StatsRowProps) {
           </s-stack>
         </s-section>
       ))}
+
+      <s-section>
+        <s-stack gap="small-200">
+          <s-text color="subdued">Average Rating</s-text>
+          {stats.totalReviews > 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <s-heading>{stats.averageRating.toFixed(1)}</s-heading>
+              <Stars n={Math.round(stats.averageRating)} size={16} color="#f59e0b" />
+            </div>
+          ) : (
+            <s-heading>—</s-heading>
+          )}
+          <s-text color="subdued">Out of 5.0</s-text>
+        </s-stack>
+      </s-section>
+
       <s-section>
         <Link
           to="/app/reviews?status=pending"

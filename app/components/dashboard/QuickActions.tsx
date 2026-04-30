@@ -3,11 +3,10 @@ import { Link } from "react-router";
 
 interface QuickActionsProps {
   onImportReviews: () => void;
-  onCustomizeWidget: () => void;
 }
 
 type ActionConfig =
-  | { key: string; label: string; description: string; accent: string; iconColor: string; icon: React.ReactNode; kind: "button"; handler: "onImportReviews" | "onCustomizeWidget" }
+  | { key: string; label: string; description: string; accent: string; iconColor: string; icon: React.ReactNode; kind: "button"; handler: "onImportReviews" }
   | { key: string; label: string; description: string; accent: string; iconColor: string; icon: React.ReactNode; kind: "link"; href: string };
 
 const actions: ActionConfig[] = [
@@ -27,7 +26,8 @@ const actions: ActionConfig[] = [
   },
   {
     key: "widget",
-    kind: "button",
+    kind: "link",
+    href: "/app/widget",
     label: "Customize Widget",
     description: "Adjust the look and feel of your review widget",
     accent: "#fdf0e0",
@@ -37,7 +37,6 @@ const actions: ActionConfig[] = [
         <path d="M12 3a1 1 0 0 1 .707.293l8 8a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-8-8a1 1 0 0 1 0-1.414l8-8A1 1 0 0 1 12 3Zm0 2.414L5.414 12 12 18.586 18.586 12 12 5.414ZM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1Zm0 7a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" />
       </svg>
     ),
-    handler: "onCustomizeWidget",
   },
   {
     key: "reviews",
@@ -146,8 +145,8 @@ function ActionCard({
   );
 }
 
-export function QuickActions({ onImportReviews, onCustomizeWidget }: QuickActionsProps) {
-  const handlers = { onImportReviews, onCustomizeWidget };
+export function QuickActions({ onImportReviews }: QuickActionsProps) {
+  const handlers = { onImportReviews };
 
   return (
     <s-section heading="Quick Actions">

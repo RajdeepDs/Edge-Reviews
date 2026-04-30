@@ -7,6 +7,8 @@ import { AnalyticsFilterBar } from "../components/dashboard/AnalyticsFilterBar";
 import { StatsRow } from "../components/dashboard/StatsRow";
 import { ImportReviewsModal } from "../components/reviews/import-reviews-modal";
 import prisma from "../db.server";
+import { getShopPlan } from "../utils/plans.server";
+import { UpgradeGate } from "../components/UpgradeGate";
 
 const RATING_COLORS: Record<number, string> = {
   5: "#16a34a",
@@ -29,6 +31,11 @@ function parseDateRange(url: URL): { fromDate: Date; toDate: Date } {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop } = session;
+
+  const shopPlan = await getShopPlan(shop);
+  if (shopPlan === "free") {
+    return { plan: "free" as const, isLocked: true as const };
+  }
 
   const { fromDate, toDate } = parseDateRange(new URL(request.url));
   const dateFilter = { gte: fromDate, lte: toDate };
@@ -138,6 +145,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }));
 
   return {
+    plan: shopPlan,
+    isLocked: false as const,
     stats,
     totalReviewsAllTime,
     ratingDistribution,
@@ -149,10 +158,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function AnalyticsPage() {
-  const { stats, totalReviewsAllTime, ratingDistribution, monthlyReviews, topProducts, importHistory, products } =
-    useLoaderData<typeof loader>();
-
+  const loaderData = useLoaderData<typeof loader>();
   const [importOpen, setImportOpen] = useState(false);
+
+  if (loaderData.isLocked) {
+    return (
+      <s-page heading="Analytics" inlineSize="base">
+        <UpgradeGate
+          feature="Analytics"
+          description="Get insights into your review performance, rating trends, monthly volume, and top-rated products."
+          requiredPlan="basic"
+          currentPlan={loaderData.plan}
+        />
+      </s-page>
+    );
+  }
+
+  const { stats, totalReviewsAllTime, ratingDistribution, monthlyReviews, topProducts, importHistory, products } = loaderData;
 
   const hasReviewData = totalReviewsAllTime > 0;
   const hasImportHistory = importHistory.length > 0;

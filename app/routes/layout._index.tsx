@@ -202,7 +202,6 @@ export default function Index() {
 
         <QuickActions
           onImportReviews={() => setImportOpen(true)}
-          onCustomizeWidget={handleCustomizeWidget}
         />
 
         <s-grid gridTemplateColumns="3fr 2fr" gap="base">

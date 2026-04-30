@@ -144,10 +144,7 @@ export default function ProductsPage() {
   const { products } = useLoaderData<typeof loader>();
 
   return (
-    <s-page heading="Products" inlineSize="large">
-      <s-button slot="primary-action" variant="primary" icon="import">
-        Import Reviews for Product
-      </s-button>
+    <s-page heading="Products" inlineSize="base">
       <ProductsList products={products} />
     </s-page>
   );

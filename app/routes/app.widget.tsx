@@ -8,6 +8,8 @@ import { Stars, StarFilled } from "../components/Stars";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
+import { getShopPlan } from "../utils/plans.server";
+import { UpgradeGate } from "../components/UpgradeGate";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -18,8 +20,11 @@ type WidgetType = "main" | "card";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const { shop } = session;
-  const config = await prisma.widgetConfig.findUnique({ where: { shop } });
-  return { config };
+  const [config, shopPlan] = await Promise.all([
+    prisma.widgetConfig.findUnique({ where: { shop } }),
+    getShopPlan(shop),
+  ]);
+  return { config, plan: shopPlan };
 };
 
 // ── Action ─────────────────────────────────────────────────────────────────────
@@ -340,7 +345,7 @@ const WIDGET_TYPES: { id: WidgetType; label: string }[] = [
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function WidgetPage() {
-  const { config } = useLoaderData<typeof loader>();
+  const { config, plan } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
 
@@ -387,6 +392,19 @@ export default function WidgetPage() {
   };
 
   const isSaving = fetcher.state !== "idle";
+
+  if (plan === "free") {
+    return (
+      <s-page heading="Widget">
+        <UpgradeGate
+          feature="Widget Customization"
+          description="Customize colors, layouts, display options and more to match your store's brand."
+          requiredPlan="basic"
+          currentPlan={plan}
+        />
+      </s-page>
+    );
+  }
 
   return (
     <s-page heading="Widget">

@@ -8,6 +8,7 @@ import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal"
 import { ExportReviewsModal } from "app/components/reviews/export-reviews-modal";
 import prisma from "../db.server";
 import { uploadReviewImage } from "../utils/cloudinary.server";
+import { getShopPlan, getMonthlyImportUsage, PLAN_LIMITS } from "../utils/plans.server";
 
 // ── Loader ────────────────────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop } = session;
 
-  const [reviews, productsRes] = await Promise.all([
+  const [reviews, productsRes, shopPlan, publishedCount, monthlyImportUsed] = await Promise.all([
     prisma.review.findMany({
       where: { shop },
       orderBy: { createdAt: "desc" },
@@ -31,6 +32,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         }
       }
     `),
+    getShopPlan(shop),
+    prisma.review.count({ where: { shop, status: "published" } }),
+    getMonthlyImportUsage(shop),
   ]);
 
   const { data } = await productsRes.json();
@@ -47,6 +51,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }));
 
   const pendingCount = reviews.filter((r) => r.status === "pending").length;
+  const limits = PLAN_LIMITS[shopPlan];
 
   return {
     reviews: reviews.map((r) => ({
@@ -75,6 +80,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     })),
     pendingCount,
     products,
+    plan: shopPlan,
+    limits: {
+      publishedReviews: limits.publishedReviews === Infinity ? null : limits.publishedReviews,
+      csvRowsPerMonth: limits.csvRowsPerMonth === Infinity ? null : limits.csvRowsPerMonth,
+      widgetCustomization: limits.widgetCustomization,
+      analytics: limits.analytics,
+      exportCSV: limits.exportCSV,
+    },
+    publishedCount,
+    monthlyImportUsed,
   };
 };
 
@@ -126,6 +141,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (intent === "toggle-status") {
     const id = formData.get("id") as string;
     const status = formData.get("status") as string;
+
+    if (status === "published") {
+      const [shopPlan, currentPublishedCount] = await Promise.all([
+        getShopPlan(shop),
+        prisma.review.count({ where: { shop, status: "published" } }),
+      ]);
+      const limits = PLAN_LIMITS[shopPlan];
+      if (currentPublishedCount >= limits.publishedReviews) {
+        return { ok: false, intent, error: "publish_limit", plan: shopPlan };
+      }
+    }
+
     await prisma.review.update({ where: { id }, data: { status } });
     return { ok: true, intent };
   }
@@ -133,8 +160,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // ── Bulk operations ──────────────────────────────────────────────────────────
   if (intent === "bulk-publish") {
     const ids = JSON.parse(formData.get("ids") as string) as string[];
-    await prisma.review.updateMany({ where: { shop, id: { in: ids } }, data: { status: "published" } });
-    return { ok: true, intent };
+
+    const [shopPlan, currentPublishedCount] = await Promise.all([
+      getShopPlan(shop),
+      prisma.review.count({ where: { shop, status: "published" } }),
+    ]);
+    const limits = PLAN_LIMITS[shopPlan];
+
+    if (currentPublishedCount >= limits.publishedReviews) {
+      return { ok: false, intent, error: "publish_limit", plan: shopPlan };
+    }
+
+    // Clamp to how many slots remain
+    const slots = limits.publishedReviews === Infinity
+      ? ids.length
+      : Math.max(0, limits.publishedReviews - currentPublishedCount);
+    const allowedIds = ids.slice(0, slots);
+
+    if (allowedIds.length > 0) {
+      await prisma.review.updateMany({ where: { shop, id: { in: allowedIds } }, data: { status: "published" } });
+    }
+
+    const skipped = ids.length - allowedIds.length;
+    return { ok: true, intent, skipped: skipped > 0 ? skipped : undefined };
   }
 
   if (intent === "bulk-reject") {
@@ -183,14 +231,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       valid.push({ ...row, rating: r });
     }
 
+    // Enforce monthly CSV import limit
+    const [shopPlan, monthlyUsed] = await Promise.all([
+      getShopPlan(shop),
+      getMonthlyImportUsage(shop),
+    ]);
+    const limits = PLAN_LIMITS[shopPlan];
+    let rowsSkippedDueToLimit = 0;
+    if (limits.csvRowsPerMonth !== Infinity && monthlyUsed + valid.length > limits.csvRowsPerMonth) {
+      const allowed = Math.max(0, limits.csvRowsPerMonth - monthlyUsed);
+      rowsSkippedDueToLimit = valid.length - allowed;
+      valid.splice(allowed);
+    }
+
     const importRecord = await prisma.importRecord.create({
       data: {
         shop,
         filename,
         totalRows: rawRows.length,
         succeeded: valid.length,
-        failed,
-        status: failed === 0 ? "completed" : valid.length === 0 ? "failed" : "partial",
+        failed: failed + rowsSkippedDueToLimit,
+        status: failed === 0 && rowsSkippedDueToLimit === 0 ? "completed" : valid.length === 0 ? "failed" : "partial",
       },
     });
 
@@ -230,6 +291,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       failed,
       total: rawRows.length,
       importId: importRecord.id,
+      rowsSkippedDueToLimit: rowsSkippedDueToLimit > 0 ? rowsSkippedDueToLimit : undefined,
     };
   }
 
@@ -239,10 +301,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReviewsPage() {
-  const { reviews, pendingCount, products } = useLoaderData<typeof loader>();
+  const { reviews, pendingCount, products, plan, limits, publishedCount } = useLoaderData<typeof loader>();
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [limitBannerDismissed, setLimitBannerDismissed] = useState(false);
+
+  const publishLimit = limits.publishedReviews;
+  const nearLimit = publishLimit !== null && publishedCount >= Math.floor(publishLimit * 0.8);
+  const atLimit = publishLimit !== null && publishedCount >= publishLimit;
 
   return (
     <s-page heading="Reviews" inlineSize="large">
@@ -254,13 +321,38 @@ export default function ReviewsPage() {
       >
         Import reviews
       </s-button>
-      <s-button
-        slot="secondary-actions"
-        icon="export"
-        onClick={() => setExportOpen(true)}
-      >
-        Export reviews
-      </s-button>
+      {plan === "business" && (
+        <s-button
+          slot="secondary-actions"
+          icon="export"
+          onClick={() => setExportOpen(true)}
+        >
+          Export reviews
+        </s-button>
+      )}
+
+      {nearLimit && !limitBannerDismissed && (
+        <s-banner
+          heading={
+            atLimit
+              ? `Published review limit reached (${publishedCount}/${publishLimit})`
+              : `Approaching published review limit (${publishedCount}/${publishLimit})`
+          }
+          tone={atLimit ? "critical" : "warning"}
+          onDismiss={() => setLimitBannerDismissed(true)}
+        >
+          {atLimit
+            ? `You've reached the ${publishLimit}-review limit on the ${plan} plan. Upgrade to publish more reviews.`
+            : `You're close to the ${publishLimit}-review limit on the ${plan} plan. Upgrade to publish more reviews.`}
+          <s-button
+            slot="secondary-actions"
+            variant="secondary"
+            onClick={() => setLimitBannerDismissed(true)}
+          >
+            Dismiss
+          </s-button>
+        </s-banner>
+      )}
 
       {pendingCount > 0 && !bannerDismissed && (
         <s-banner
@@ -288,12 +380,14 @@ export default function ReviewsPage() {
         products={products}
       />
 
-      <ExportReviewsModal
-        open={exportOpen}
-        onClose={() => setExportOpen(false)}
-        reviews={reviews}
-        products={products}
-      />
+      {plan === "business" && (
+        <ExportReviewsModal
+          open={exportOpen}
+          onClose={() => setExportOpen(false)}
+          reviews={reviews}
+          products={products}
+        />
+      )}
     </s-page>
   );
 }
