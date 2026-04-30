@@ -47,7 +47,6 @@
   data-er-submit="{{ er_submit }}"
   data-er-product-id="{{ er_product_id }}"
   data-er-product-title="{{ er_product_title | escape }}"
-  {%- if block.settings.title != blank %}data-er-title-override="{{ block.settings.title | escape }}"{% endif %}
 >
   <div class="er-widget er-widget--main">
     <div class="er-shell">
@@ -78,12 +77,6 @@
 {
   "name": "t:blocks.main_widget.name",
   "target": "section",
-  "settings": [
-    {
-      "type": "text",
-      "id": "title",
-      "label": "t:blocks.main_widget.settings.title"
-    }
-  ]
+  "settings": []
 }
 {% endschema %}

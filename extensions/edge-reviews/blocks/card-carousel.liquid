@@ -37,7 +37,6 @@
   data-er-widget="card"
   data-er-shop="{{ er_shop }}"
   data-er-endpoint="{{ er_endpoint }}"
-  {%- if block.settings.title != blank %}data-er-title-override="{{ block.settings.title | escape }}"{% endif %}
   data-er-cards-per-view="{{ block.settings.cards_per_view }}"
 >
   <div class="er-widget er-widget--card">
@@ -74,11 +73,6 @@
   "name": "t:blocks.card_carousel.name",
   "target": "section",
   "settings": [
-    {
-      "type": "text",
-      "id": "title",
-      "label": "t:blocks.card_carousel.settings.title"
-    },
     {
       "type": "range",
       "id": "cards_per_view",

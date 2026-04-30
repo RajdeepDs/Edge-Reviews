@@ -5,6 +5,7 @@ import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { ReviewsTable } from "app/components/reviews/reviews-table";
 import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal";
+import { ExportReviewsModal } from "app/components/reviews/export-reviews-modal";
 import prisma from "../db.server";
 import { uploadReviewImage } from "../utils/cloudinary.server";
 
@@ -240,6 +241,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function ReviewsPage() {
   const { reviews, pendingCount, products } = useLoaderData<typeof loader>();
   const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   return (
@@ -251,6 +253,13 @@ export default function ReviewsPage() {
         onClick={() => setImportOpen(true)}
       >
         Import reviews
+      </s-button>
+      <s-button
+        slot="secondary-actions"
+        icon="export"
+        onClick={() => setExportOpen(true)}
+      >
+        Export reviews
       </s-button>
 
       {pendingCount > 0 && !bannerDismissed && (
@@ -276,6 +285,13 @@ export default function ReviewsPage() {
       <ImportReviewsModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
+        products={products}
+      />
+
+      <ExportReviewsModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        reviews={reviews}
         products={products}
       />
     </s-page>

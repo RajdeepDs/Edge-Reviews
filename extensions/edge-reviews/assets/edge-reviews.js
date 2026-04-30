@@ -91,10 +91,7 @@
   function buildMainWidget(root, data, opts) {
     const { config, reviews, stats } = data;
 
-    const title =
-      (opts.titleOverride && String(opts.titleOverride).trim()) ||
-      (config && config.mainTitle) ||
-      "Reviews";
+    const title = (config && config.mainTitle) || "Reviews";
 
     const accent = (config && config.mainAccentColor) || "#111111";
     const showBreakdown = config?.mainShowBreakdown ?? true;
@@ -398,10 +395,7 @@
   function buildCardCarousel(root, data, opts) {
     const { config, reviews, stats } = data;
 
-    const title =
-      (opts.titleOverride && String(opts.titleOverride).trim()) ||
-      (config && config.cardTitle) ||
-      "Customers are saying";
+    const title = (config && config.cardTitle) || "Customers are saying";
 
     const accent = (config && config.cardAccentColor) || "#111111";
     const showRating = config?.cardShowRating ?? true;
@@ -511,8 +505,6 @@
     const endpoint = root.getAttribute("data-er-endpoint") || "";
     const widget = root.getAttribute("data-er-widget") || "main";
     const submitUrl = root.getAttribute("data-er-submit") || "";
-    const titleOverride = root.getAttribute("data-er-title-override") || "";
-
     const productId = root.getAttribute("data-er-product-id") || "";
     const productTitle = root.getAttribute("data-er-product-title") || "";
     const cardsPerView = root.getAttribute("data-er-cards-per-view") || "";
@@ -528,9 +520,9 @@
       if (!res.ok || data?.error) throw new Error(data?.error || "Failed to load reviews");
 
       if (widget === "card") {
-        buildCardCarousel(root, data, { titleOverride, cardsPerView });
+        buildCardCarousel(root, data, { cardsPerView });
       } else {
-        buildMainWidget(root, data, { submitUrl, titleOverride, productId, productTitle });
+        buildMainWidget(root, data, { submitUrl, productId, productTitle });
       }
     } catch (err) {
       root.innerHTML = `
@@ -571,6 +563,12 @@
   } else {
     boot();
   }
+
+  // Re-initialize when the theme editor re-renders a section after a setting change
+  document.addEventListener("shopify:section:load", (event) => {
+    const roots = qsa(event.target, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card']");
+    roots.forEach(initRoot);
+  });
 
   window.EdgeReviews = window.EdgeReviews || {};
   window.EdgeReviews[NS] = { boot };

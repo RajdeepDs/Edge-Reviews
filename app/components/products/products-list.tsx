@@ -3,14 +3,12 @@ import {
   LegacyCard,
   IndexFilters,
   useSetIndexFiltersMode,
-  useIndexResourceState,
   Text,
   Badge,
   InlineStack,
   useBreakpoints,
   ChoiceList,
 } from "@shopify/polaris";
-import { DeleteIcon } from "@shopify/polaris-icons";
 import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import type { ProductWithStats } from "../../routes/app.products";
@@ -152,38 +150,11 @@ export function ProductsList({ products }: ProductsListProps) {
     });
 
   const resourceName = { singular: "product", plural: "products" };
-  const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    useIndexResourceState(filteredProducts);
-
-  const promotedBulkActions = [
-    {
-      content: "Set as active",
-      onAction: () => console.log("Todo: bulk activate"),
-    },
-    {
-      content: "Set as archived",
-      onAction: () => console.log("Todo: bulk archive"),
-    },
-  ];
-
-  const bulkActions = [
-    {
-      content: "Export selected",
-      onAction: () => console.log("Todo: bulk export"),
-    },
-    {
-      icon: DeleteIcon,
-      destructive: true,
-      content: "Delete products",
-      onAction: () => console.log("Todo: bulk delete"),
-    },
-  ];
 
   const rowMarkup = filteredProducts.map((product, index) => (
     <IndexTable.Row
       id={product.id}
       key={product.id}
-      selected={selectedResources.includes(product.id)}
       position={index}
     >
       <IndexTable.Cell>
@@ -287,12 +258,7 @@ export function ProductsList({ products }: ProductsListProps) {
         condensed={smDown}
         resourceName={resourceName}
         itemCount={filteredProducts.length}
-        selectedItemsCount={
-          allResourcesSelected ? "All" : selectedResources.length
-        }
-        onSelectionChange={handleSelectionChange}
-        promotedBulkActions={promotedBulkActions}
-        bulkActions={bulkActions}
+        selectable={false}
         headings={[
           { title: "Product" },
           { title: "Status" },

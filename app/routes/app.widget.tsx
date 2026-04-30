@@ -305,21 +305,21 @@ function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; c
       <AggHeader title={s.cardTitle} badge={s.cardShowBadge} />
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <ArrowBtn dir="left" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, flex: 1 }}>
-          {cards.map((c, i) => (
-            <div key={i} style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #e1e3e5", background: "#fff" }}>
-              <div style={{ height: 90, background: c.g }} />
-              <div style={{ padding: "8px 7px 10px" }}>
-                <p style={{ fontSize: 9, color: "#6d7175", lineHeight: 1.4, margin: "0 0 5px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, flex: 1 }}>
+          {cards.slice(0, 2).map((c, i) => (
+            <div key={i} style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #e1e3e5", background: "#fff" }}>
+              <div style={{ height: 160, background: "linear-gradient(160deg, #e5e7eb 0%, #d1d5db 100%)" }} />
+              <div style={{ padding: "14px 12px 16px", textAlign: "center" }}>
+                <p style={{ fontSize: 12, color: "#6d7175", lineHeight: 1.5, margin: "0 0 8px", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {c.text.length > s.cardMaxChars ? c.text.slice(0, s.cardMaxChars).trim() + "…" : c.text}
                 </p>
-                {s.cardShowRating && <div style={{ marginBottom: 3 }}><Stars n={5} size={11} color="#f59e0b" /></div>}
+                {s.cardShowRating && <div style={{ marginBottom: 5, display: "flex", justifyContent: "center" }}><Stars n={5} size={14} color="#f59e0b" /></div>}
                 {s.cardShowName && (
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "#1a1a1a" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a" }}>
                     {c.name}{s.cardShowBadge && <span style={{ color: "#2d7a3f", marginLeft: 3 }}>✓</span>}
                   </div>
                 )}
-                {s.cardShowProduct && <div style={{ fontSize: 8, color: "#8c9196", marginTop: 2 }}>{c.product}</div>}
+                {s.cardShowProduct && <div style={{ fontSize: 11, color: "#8c9196", marginTop: 3 }}>{c.product}</div>}
               </div>
             </div>
           ))}
@@ -493,10 +493,6 @@ export default function WidgetPage() {
               <>
                 <s-section heading="General">
                   <s-text-field label="Section title" {...({ value: cardTitle, onInput: (e: Event) => setCardTitle((e.target as HTMLInputElement).value) } as object)} />
-                  <BlockStack gap="100">
-                    <Text as="p" variant="bodyMd">Accent color</Text>
-                    <ColorField value={cardAccentColor} onChange={setCardAccentColor} />
-                  </BlockStack>
                 </s-section>
                 <s-section heading="Display">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -515,25 +511,6 @@ export default function WidgetPage() {
                     <Text as="p" variant="bodyMd">Show product name</Text>
                     <s-switch checked={cardShowProduct} onInput={() => setCardShowProduct(!cardShowProduct)} accessibilityLabel="Toggle show product name" />
                   </div>
-                </s-section>
-                <s-section heading="Behavior">
-                  <BlockStack gap="200">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Text as="p" variant="bodyMd">Max review text length</Text>
-                      <Text as="p" variant="bodySm" tone="subdued">{cardMaxChars} chars</Text>
-                    </div>
-                    <input
-                      type="range"
-                      min={60} max={220} step={10}
-                      value={cardMaxChars}
-                      onChange={(e) => setCardMaxChars(Number(e.target.value))}
-                      style={{ width: "100%" }}
-                    />
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <Text as="p" variant="bodySm" tone="subdued">60</Text>
-                      <Text as="p" variant="bodySm" tone="subdued">220</Text>
-                    </div>
-                  </BlockStack>
                 </s-section>
               </>
             )}
