@@ -155,10 +155,6 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
       title: "OxyEnergy is now part of my daily routine",
       excerpt:
         "I was hesitant at first, but OxyEnergy exceeded my expectations. Within a couple of weeks, I noticed reduced bloating and a much lighter feeling throughout the day.",
-      product: "The Multi-managed Snowboard",
-      hair: "#dd7a38",
-      sweater: "#c96f31",
-      bg: "linear-gradient(135deg, #f5e8dd 0%, #f0dfd1 38%, #c88b56 100%)",
     },
     {
       name: "Mira",
@@ -166,10 +162,6 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
       title: "Gentle, effective, and easy to stay consistent with",
       excerpt:
         "The capsules have become the easiest wellness habit in my routine. I feel lighter after meals, my energy feels stable, and I love how simple it is to keep up.",
-      product: "Balance Blend Essentials",
-      hair: "#5c402f",
-      sweater: "#9b8664",
-      bg: "linear-gradient(135deg, #ebe5dc 0%, #d9ccb9 42%, #9b8664 100%)",
     },
   ];
 
@@ -238,127 +230,7 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
               boxShadow: "0 14px 28px rgba(93, 63, 19, 0.08)",
             }}
           >
-            <div
-              style={{
-                height: 220,
-                background: card.bg,
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 12,
-                  borderRadius: 20,
-                  border: "1px solid rgba(255,255,255,0.45)",
-                  background:
-                    "linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.02))",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: 22,
-                  bottom: 0,
-                  width: 118,
-                  height: 168,
-                  borderRadius: "72px 72px 0 0",
-                  background: "linear-gradient(180deg, #f7e5d8, #efc8af)",
-                  boxShadow: "0 16px 30px rgba(94, 48, 13, 0.15)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: 18,
-                  bottom: 120,
-                  width: 126,
-                  height: 118,
-                  borderRadius: "62px 62px 56px 56px",
-                  background: card.hair,
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: 44,
-                  bottom: 132,
-                  width: 76,
-                  height: 92,
-                  borderRadius: "40px 40px 48px 48px",
-                  background: "linear-gradient(180deg, #f8e4d4, #edc9af)",
-                  boxShadow: "inset 0 -8px 14px rgba(186, 122, 75, 0.12)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: 18,
-                  bottom: 6,
-                  width: 138,
-                  height: 112,
-                  borderRadius: "28px 28px 0 0",
-                  background: card.sweater,
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  right: 18,
-                  top: 28,
-                  width: 84,
-                  height: 132,
-                  borderRadius: 18,
-                  background: "rgba(255,255,255,0.88)",
-                  border: "1px solid rgba(91, 67, 33, 0.15)",
-                  boxShadow: "0 18px 28px rgba(88, 63, 35, 0.12)",
-                }}
-              >
-                <div
-                  style={{
-                    width: 52,
-                    height: 14,
-                    borderRadius: "0 0 10px 10px",
-                    background: "#f3f0ea",
-                    margin: "0 auto",
-                    borderLeft: "1px solid rgba(91, 67, 33, 0.1)",
-                    borderRight: "1px solid rgba(91, 67, 33, 0.1)",
-                    borderBottom: "1px solid rgba(91, 67, 33, 0.1)",
-                  }}
-                />
-                <div style={{ padding: "12px 10px 10px" }}>
-                  <div style={{ fontSize: 9, color: "#54422e", writingMode: "vertical-rl", position: "absolute", left: 7, top: 28, letterSpacing: "0.04em" }}>
-                    OxyEnergy
-                  </div>
-                  <div style={{ marginLeft: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                      <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#2d241b", color: "#fff", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
-                        OE
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 26, fontSize: 9, lineHeight: 1.15, color: "#54422e", fontWeight: 600 }}>
-                      OxyEnergy
-                      <br />
-                      Health
-                    </div>
-                    <div style={{ marginTop: 8, fontSize: 7, lineHeight: 1.25, color: "#6d6253" }}>
-                      Daily Wellness
-                      <br />
-                      Supplement
-                    </div>
-                    <div
-                      style={{
-                        marginTop: 9,
-                        height: 28,
-                        borderRadius: 9,
-                        background: "linear-gradient(180deg, #dac894, #c8af70)",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div style={{ height: 220, background: "linear-gradient(160deg, #e5e7eb 0%, #d1d5db 100%)" }} />
 
             <div style={{ padding: "20px 20px 18px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
@@ -411,12 +283,6 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
                 {card.excerpt}
               </p>
 
-              <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: s.mainAccentColor, flexShrink: 0 }} />
-                <div style={{ fontSize: 11, color: "#6d7175", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {card.product}
-                </div>
-              </div>
             </div>
           </div>
         ))}
