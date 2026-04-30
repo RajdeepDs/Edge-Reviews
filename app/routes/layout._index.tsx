@@ -112,6 +112,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { ok: true };
   }
 
+  if (intent === "mark-reviews-imported") {
+    await prisma.shopSettings.upsert({
+      where: { shop },
+      update: { reviewsImported: true },
+      create: { shop, reviewsImported: true },
+    });
+    return { ok: true };
+  }
+
   if (intent === "mark-confirmed-working") {
     await prisma.shopSettings.upsert({
       where: { shop },
@@ -132,7 +141,7 @@ export default function Index() {
 
   const [setupDismissed, setSetupDismissed] = useState(false);
   const [embedActivated, setEmbedActivated] = useState(setupState.embedActivated);
-  const [reviewsImported] = useState(setupState.reviewsImported);
+  const [reviewsImported, setReviewsImported] = useState(setupState.reviewsImported);
   const [reviewConfirmedWorking, setReviewConfirmedWorking] = useState(
     setupState.confirmedWorking,
   );
@@ -148,6 +157,11 @@ export default function Index() {
   const handleMarkEmbedDone = () => {
     setEmbedActivated(true);
     settingsFetcher.submit({ intent: "mark-embed-done" }, { method: "post" });
+  };
+
+  const handleMarkImportDone = () => {
+    setReviewsImported(true);
+    settingsFetcher.submit({ intent: "mark-reviews-imported" }, { method: "post" });
   };
 
   const handleMarkConfirmedWorking = () => {
@@ -179,6 +193,7 @@ export default function Index() {
             onOpenThemeSettings={handleOpenThemeSettings}
             onMarkEmbedDone={handleMarkEmbedDone}
             onImportReviews={() => setImportOpen(true)}
+            onMarkImportDone={handleMarkImportDone}
             onMarkConfirmedWorking={handleMarkConfirmedWorking}
           />
         )}

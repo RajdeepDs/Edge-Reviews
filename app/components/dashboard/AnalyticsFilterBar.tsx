@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { DatePicker, OptionList } from "@shopify/polaris";
 
@@ -83,11 +83,6 @@ export function AnalyticsFilterBar() {
     end: new Date(pendingRange.to + "T00:00:00"),
   };
 
-  const pendingRef = useRef({ preset: pendingPreset, range: pendingRange });
-  useEffect(() => {
-    pendingRef.current = { preset: pendingPreset, range: pendingRange };
-  }, [pendingPreset, pendingRange]);
-
   useEffect(() => {
     const popover = document.getElementById("analytics-date-popover");
     if (!popover) return;
@@ -107,17 +102,9 @@ export function AnalyticsFilterBar() {
     return () => popover.removeEventListener("toggle", handler);
   }, [searchParams]);
 
-  useEffect(() => {
-    const btn = document.getElementById("analytics-apply-btn");
-    if (!btn) return;
-    const handler = () => {
-      const { preset, range } = pendingRef.current;
-      setSearchParams({ from: range.from, to: range.to, preset });
-      document.getElementById("analytics-date-popover")?.hidePopover();
-    };
-    btn.addEventListener("click", handler);
-    return () => btn.removeEventListener("click", handler);
-  }, [setSearchParams]);
+  const handleApply = () => {
+    setSearchParams({ from: pendingRange.from, to: pendingRange.to, preset: pendingPreset });
+  };
 
   const handleMonthChange = (newMonth: number, newYear: number) => {
     setDate({ month: newMonth, year: newYear });
@@ -175,7 +162,7 @@ export function AnalyticsFilterBar() {
 
             <s-stack direction="inline" justifyContent="end" gap="base" padding="small-100">
               <s-button commandFor="analytics-date-popover">Cancel</s-button>
-              <s-button id="analytics-apply-btn" variant="primary">Apply</s-button>
+              <s-button variant="primary" commandFor="analytics-date-popover" command="--hide" {...({ onClick: handleApply } as object)}>Apply</s-button>
             </s-stack>
           </s-box>
         </div>

@@ -13,6 +13,7 @@ import {
 import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { useFetcher, useSearchParams } from "react-router";
+import { Stars } from "../Stars";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -231,10 +232,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
           </div>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <Text as="span" variant="bodyMd">
-            <span style={{ color: "#fbbf24" }}>{"★".repeat(review.rating)}</span>
-            <span style={{ color: "#e1e3e5" }}>{"★".repeat(5 - review.rating)}</span>
-          </Text>
+          <Stars n={review.rating} size={13} />
         </IndexTable.Cell>
         <IndexTable.Cell>{review.product}</IndexTable.Cell>
         <IndexTable.Cell>{statusBadge(effectiveStatus)}</IndexTable.Cell>

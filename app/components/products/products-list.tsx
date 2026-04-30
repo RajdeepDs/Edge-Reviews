@@ -14,6 +14,7 @@ import { DeleteIcon } from "@shopify/polaris-icons";
 import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import type { ProductWithStats } from "../../routes/app.products";
+import { Stars } from "../Stars";
 
 const STATUS_KEYS = ["all", "active", "draft", "archived"] as const;
 
@@ -30,23 +31,6 @@ function statusBadge(status: string) {
   }
 }
 
-function StarRating({ avg }: { avg: number }) {
-  const full = Math.floor(avg);
-  const half = avg - full >= 0.5;
-  const empty = 5 - full - (half ? 1 : 0);
-  return (
-    <Text as="span" variant="bodyMd">
-      <span style={{ color: "#f59e0b" }}>
-        {"★".repeat(full)}
-        {half ? "½" : ""}
-        {"☆".repeat(empty)}
-      </span>{" "}
-      <Text as="span" variant="bodySm" tone="subdued">
-        {avg.toFixed(1)}
-      </Text>
-    </Text>
-  );
-}
 
 interface ProductsListProps {
   products: ProductWithStats[];
@@ -248,7 +232,12 @@ export function ProductsList({ products }: ProductsListProps) {
       </IndexTable.Cell>
       <IndexTable.Cell>{statusBadge(product.status)}</IndexTable.Cell>
       <IndexTable.Cell>
-        {product.reviewCount > 0 && <StarRating avg={product.avgRating} />}
+        {product.reviewCount > 0 && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Stars n={Math.round(product.avgRating)} size={13} />
+            <Text as="span" variant="bodySm" tone="subdued">{product.avgRating.toFixed(1)}</Text>
+          </span>
+        )}
       </IndexTable.Cell>
       <IndexTable.Cell>
         {product.reviewCount > 0 && (

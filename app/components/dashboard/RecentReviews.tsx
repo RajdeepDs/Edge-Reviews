@@ -1,3 +1,5 @@
+import { Stars } from "../Stars";
+
 interface Review {
   id: number | string;
   customer: string;
@@ -9,24 +11,6 @@ interface Review {
   status?: string;
 }
 
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <s-stack direction="inline" gap="small-100">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          style={{
-            color: star <= rating ? "#fbbf24" : "#d1d5db",
-            fontSize: "13px",
-            lineHeight: 1,
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </s-stack>
-  );
-}
 
 interface RecentReviewsProps {
   reviews: Review[];
@@ -84,7 +68,7 @@ export function RecentReviews({
                         <s-text color="subdued">{review.date}</s-text>
                       </s-grid>
                       <s-text color="subdued">{review.product}</s-text>
-                      <StarRating rating={review.rating} />
+                      <Stars n={review.rating} size={13} />
                       <s-paragraph>
                         {review.text.length > 100
                           ? `${review.text.slice(0, 100)}…`

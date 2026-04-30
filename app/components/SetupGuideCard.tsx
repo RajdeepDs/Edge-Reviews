@@ -25,6 +25,7 @@ interface SetupGuideCardProps {
   onOpenThemeSettings: () => void;
   onMarkEmbedDone: () => void;
   onImportReviews: () => void;
+  onMarkImportDone: () => void;
   onMarkConfirmedWorking: () => void;
 }
 
@@ -36,6 +37,7 @@ export function SetupGuideCard({
   onOpenThemeSettings,
   onMarkEmbedDone,
   onImportReviews,
+  onMarkImportDone,
   onMarkConfirmedWorking,
 }: SetupGuideCardProps) {
   const steps = [
@@ -62,6 +64,7 @@ export function SetupGuideCard({
       actions: !reviewsImported ? (
         <InlineStack gap="200">
           <Button variant="primary" onClick={onImportReviews}>Import reviews</Button>
+          <Button onClick={onMarkImportDone}>Mark as done</Button>
         </InlineStack>
       ) : null,
     },

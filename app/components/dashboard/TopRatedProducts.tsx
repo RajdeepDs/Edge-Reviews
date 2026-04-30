@@ -1,3 +1,5 @@
+import { Stars } from "../Stars";
+
 interface TopProduct {
   id: number;
   name: string;
@@ -7,17 +9,6 @@ interface TopProduct {
   reviewCount: number;
 }
 
-function Stars({ rating }: { rating: number }) {
-  const full = Math.floor(rating);
-  const half = rating - full >= 0.5;
-  return (
-    <span style={{ fontSize: "12px", letterSpacing: "1px", color: "#fbbf24" }}>
-      {"★".repeat(full)}
-      {half ? "½" : ""}
-      <span style={{ color: "#e1e3e5" }}>{"★".repeat(5 - full - (half ? 1 : 0))}</span>
-    </span>
-  );
-}
 
 interface TopRatedProductsProps {
   products: TopProduct[];
@@ -84,7 +75,7 @@ export function TopRatedProducts({ products }: TopRatedProductsProps) {
                 >
                   {product.name}
                 </div>
-                <Stars rating={product.avgRating} />
+                <Stars n={Math.round(product.avgRating)} size={12} />
               </div>
 
               <div style={{ textAlign: "right", flexShrink: 0 }}>
