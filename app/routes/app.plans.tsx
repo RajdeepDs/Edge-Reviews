@@ -9,113 +9,150 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return null;
 };
 
-const CURRENT_PLAN = "growth";
+const CURRENT_PLAN = "free";
+
+type FeatureItem = { text: string; included: boolean };
+type FeatureGroup = { category: string; items: FeatureItem[] };
 
 type Plan = {
   id: string;
   name: string;
-  tagline: string;
   monthlyPrice: number;
-  annualPrice: number;
-  annualTotal: number;
   popular?: boolean;
-  headerGradient: string;
   accentColor: string;
-  lightAccent: string;
-  icon: string;
   cta: string;
-  features: { text: string; included: boolean; highlight?: boolean }[];
+  groups: FeatureGroup[];
 };
 
 const PLANS: Plan[] = [
   {
-    id: "starter",
-    name: "Starter",
-    tagline: "Collect and display reviews with zero upfront cost.",
-    monthlyPrice: 9,
-    annualPrice: 7,
-    annualTotal: 84,
-    headerGradient: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
-    accentColor: "#64748b",
-    lightAccent: "#f1f5f9",
-    icon: "🌱",
-    cta: "Get Starter",
-    features: [
-      { text: "Up to 100 published reviews",        included: true  },
-      { text: "List widget layout",                  included: true  },
-      { text: "Manual moderation",                   included: true  },
-      { text: "1 CSV import / month (200 rows)",     included: true  },
-      { text: "30-day analytics window",             included: true  },
-      { text: "Verified purchase badge",             included: true  },
-      { text: "Auto-publish rules",                  included: false },
-      { text: "Review request emails",               included: false },
+    id: "free",
+    name: "Free",
+    monthlyPrice: 0,
+    accentColor: "#4a4a4a",
+    cta: "Get started free",
+    groups: [
+      {
+        category: "REVIEWS",
+        items: [
+          { text: "Up to 50 published reviews",  included: true  },
+          { text: "Text reviews",                included: true  },
+          { text: "Photo reviews",                included: true  },
+          { text: "Manual moderation",           included: true  },
+          { text: "Star rating display",         included: true  },
+        ],
+      },
+      {
+        category: "DISPLAY",
+        items: [
+          { text: "1 widget layout",              included: true  },
+          { text: "Widget customization",        included: false },
+        ],
+      },
+      {
+        category: "IMPORT",
+        items: [
+          { text: "CSV import — 100 rows/mo",    included: true  },
+        ],
+      },
+      {
+        category: "ANALYTICS",
+        items: [
+          { text: "Analytics",                   included: false },
+        ],
+      },
     ],
   },
   {
-    id: "growth",
-    name: "Growth",
-    tagline: "Automate reviews and build trust at scale.",
-    monthlyPrice: 19,
-    annualPrice: 15,
-    annualTotal: 180,
+    id: "basic",
+    name: "Basic",
+    monthlyPrice: 5.99,
     popular: true,
-    headerGradient: "linear-gradient(145deg, #f59e0b 0%, #EF9F27 40%, #ea7c0a 100%)",
-    accentColor: "#EF9F27",
-    lightAccent: "#fffbeb",
-    icon: "⚡",
-    cta: "Upgrade to Growth",
-    features: [
-      { text: "Up to 5,000 published reviews",                 included: true, highlight: true },
-      { text: "All widget layouts (list, grid, carousel)",     included: true  },
-      { text: "Auto-publish rules + rating threshold",         included: true, highlight: true },
-      { text: "Unlimited imports (2,000 rows each)",           included: true  },
-      { text: "Full analytics + rating breakdown",             included: true  },
-      { text: "Verified purchase badge",                       included: true  },
-      { text: "Review request emails (500 / month)",           included: true, highlight: true },
-      { text: "Duplicate detection",                           included: true  },
-      { text: "Custom accent color",                           included: true  },
-      { text: "API access",                                    included: false },
+    accentColor: "#2563eb",
+    cta: "Start free trial",
+    groups: [
+      {
+        category: "REVIEWS",
+        items: [
+          { text: "Up to 500 published reviews", included: true },
+          { text: "Photo reviews",                included: true },
+          { text: "Auto-publish rules",          included: true },
+          { text: "Verified purchase badge",     included: true },
+        ],
+      },
+      {
+        category: "DISPLAY",
+        items: [
+          { text: "All widget layouts",                        included: true },
+          { text: "Widget customization",                      included: true },
+        ],
+      },
+      {
+        category: "IMPORT",
+        items: [
+          { text: "CSV import — 1,000 rows/mo", included: true },
+        ],
+      },
+      {
+        category: "ANALYTICS",
+        items: [
+          { text: "Basic analytics",             included: true  },
+          { text: "Advanced analytics + export", included: false },
+        ],
+      },
     ],
   },
   {
-    id: "scale",
-    name: "Scale",
-    tagline: "Unlimited everything for high-volume stores.",
-    monthlyPrice: 49,
-    annualPrice: 39,
-    annualTotal: 468,
-    headerGradient: "linear-gradient(145deg, #6366f1 0%, #7c3aed 100%)",
-    accentColor: "#6366f1",
-    lightAccent: "#eef2ff",
-    icon: "🚀",
-    cta: "Upgrade to Scale",
-    features: [
-      { text: "Unlimited published reviews",                   included: true, highlight: true },
-      { text: "All widget layouts (list, grid, carousel)",     included: true  },
-      { text: "Auto-publish rules + rating threshold",         included: true  },
-      { text: "Unlimited imports (no row limit)",              included: true, highlight: true },
-      { text: "Advanced analytics + CSV export",               included: true  },
-      { text: "Review request emails (unlimited)",             included: true, highlight: true },
-      { text: "Custom widget branding",                        included: true  },
-      { text: "API access",                                    included: true, highlight: true },
+    id: "business",
+    name: "Business",
+    monthlyPrice: 13.99,
+    accentColor: "#4a4a4a",
+    cta: "Start free trial",
+    groups: [
+      {
+        category: "REVIEWS",
+        items: [
+          { text: "Unlimited published reviews",              included: true },
+          { text: "Photo reviews",                            included: true },
+          { text: "Auto-publish rules + rating threshold",    included: true },
+          { text: "Verified purchase badge",                  included: true },
+        ],
+      },
+      {
+        category: "DISPLAY",
+        items: [
+          { text: "All widget layouts",                        included: true },
+          { text: "Full widget customization + branding",      included: true },
+        ],
+      },
+      {
+        category: "IMPORT",
+        items: [
+          { text: "CSV import — unlimited rows",              included: true },
+        ],
+      },
+      {
+        category: "ANALYTICS",
+        items: [
+          { text: "Advanced analytics + CSV export",          included: true },
+        ],
+      },
     ],
   },
 ];
 
-function Check({ color }: { color: string }) {
+function Check() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-      <circle cx="9" cy="9" r="9" fill={color} fillOpacity="0.15" />
-      <path d="M5.5 9l2.5 2.5 4.5-5" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <path d="M3 8l3.5 3.5L13 4.5" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function Cross() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-      <circle cx="9" cy="9" r="9" fill="#f1f5f9" />
-      <path d="M6.5 6.5l5 5M11.5 6.5l-5 5" stroke="#cbd5e1" strokeWidth="1.75" strokeLinecap="round" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -131,199 +168,138 @@ export default function PlansPage() {
 
   return (
     <s-page heading="Plans & Pricing" inlineSize="large">
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "36px", maxWidth: "1060px", margin: "0 auto", width: "100%" }}>
-
-        {/* Hero text */}
-        <p style={{ fontSize: "15px", color: "#64748b", margin: 0, lineHeight: 1.6, textAlign: "center", maxWidth: "480px" }}>
-          Start free and upgrade as you grow. All plans include a{" "}
-          <strong style={{ color: "#0f172a" }}>7-day free trial</strong> — no credit card required.
-        </p>
+      <div style={{ maxWidth: "960px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "28px" }}>
 
         {/* Billing toggle */}
-        <div style={{
-          display: "inline-flex", alignItems: "center",
-          background: "#f8fafc", border: "1px solid #e2e8f0",
-          borderRadius: "12px", padding: "5px", gap: "2px",
-        }}>
-          {[false, true].map((isAnnual) => (
-            <button
-              key={String(isAnnual)}
-              onClick={() => setAnnual(isAnnual)}
-              style={{
-                padding: "7px 20px", borderRadius: "8px", border: "none",
-                cursor: "pointer", fontSize: "13px", fontWeight: 600,
-                display: "flex", alignItems: "center", gap: "8px",
-                background: annual === isAnnual ? "#ffffff" : "transparent",
-                color: annual === isAnnual ? "#0f172a" : "#94a3b8",
-                boxShadow: annual === isAnnual ? "0 1px 4px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)" : "none",
-                transition: "all 0.18s ease",
-              }}
-            >
-              {isAnnual ? "Annual billing" : "Monthly billing"}
-              {isAnnual && (
-                <span style={{
-                  background: "linear-gradient(135deg, #22c55e, #16a34a)",
-                  color: "#fff", fontSize: "10px", fontWeight: 800,
-                  padding: "2px 8px", borderRadius: "20px", letterSpacing: "0.03em",
-                }}>
-                  SAVE 20%
-                </span>
-              )}
-            </button>
-          ))}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center",
+            background: "#f1f5f9", borderRadius: "10px", padding: "4px", gap: "2px",
+          }}>
+            {[false, true].map((isAnnual) => (
+              <button
+                key={String(isAnnual)}
+                onClick={() => setAnnual(isAnnual)}
+                style={{
+                  padding: "6px 18px", borderRadius: "7px", border: "none",
+                  cursor: "pointer", fontSize: "13px", fontWeight: 600,
+                  display: "flex", alignItems: "center", gap: "8px",
+                  background: annual === isAnnual ? "#ffffff" : "transparent",
+                  color: annual === isAnnual ? "#111827" : "#6b7280",
+                  boxShadow: annual === isAnnual ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {isAnnual ? "Annual billing" : "Monthly billing"}
+                {isAnnual && (
+                  <span style={{
+                    background: "#dcfce7", color: "#16a34a",
+                    fontSize: "10px", fontWeight: 700,
+                    padding: "1px 7px", borderRadius: "20px",
+                  }}>
+                    SAVE 20%
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {/* Plan feature breakdown heading */}
+        <p style={{ margin: 0, fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          Plan feature breakdown
+        </p>
+
         {/* Cards */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "20px",
-          width: "100%",
-          alignItems: "center",
-        }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", alignItems: "stretch" }}>
           {PLANS.map((plan) => {
             const isCurrent = plan.id === CURRENT_PLAN;
-            const price = annual ? plan.annualPrice : plan.monthlyPrice;
+            const monthly = plan.monthlyPrice;
+            const price = annual ? +(monthly * 0.8).toFixed(2) : monthly;
 
             return (
               <div
                 key={plan.id}
                 style={{
-                  borderRadius: "20px",
+                  borderRadius: "14px",
+                  border: plan.popular ? `2px solid ${plan.accentColor}` : "1.5px solid #e5e7eb",
+                  background: "#ffffff",
                   overflow: "hidden",
-                  border: plan.popular ? `2px solid ${plan.accentColor}` : "2px solid #e2e8f0",
-                  boxShadow: plan.popular
-                    ? `0 8px 40px ${plan.accentColor}30, 0 2px 8px rgba(0,0,0,0.08)`
-                    : "0 2px 8px rgba(0,0,0,0.05)",
+                  boxShadow: plan.popular ? "0 4px 24px rgba(37,99,235,0.10)" : "0 1px 4px rgba(0,0,0,0.05)",
                   position: "relative",
-                  transform: plan.popular ? "translateY(-8px)" : "none",
                 }}
               >
-                {/* Popular badge */}
+                {/* Most popular badge */}
                 {plan.popular && (
                   <div style={{
-                    position: "absolute", top: "-1px", left: "50%",
-                    transform: "translateX(-50%)",
-                    background: plan.accentColor,
-                    color: "#fff", fontSize: "10px", fontWeight: 800,
-                    padding: "4px 16px", borderRadius: "0 0 10px 10px",
-                    letterSpacing: "0.08em", whiteSpace: "nowrap",
-                    boxShadow: `0 2px 8px ${plan.accentColor}50`,
+                    textAlign: "center",
+                    background: "#eff6ff",
+                    padding: "6px 0",
+                    fontSize: "11px", fontWeight: 700,
+                    color: plan.accentColor, letterSpacing: "0.04em",
                   }}>
-                    MOST POPULAR
+                    Most popular
                   </div>
                 )}
 
-                {/* Gradient header */}
-                <div style={{
-                  background: plan.headerGradient,
-                  padding: plan.popular ? "36px 28px 28px" : "22px 24px 20px",
-                  display: "flex", flexDirection: "column", gap: "16px",
-                }}>
-                  {/* Plan name row */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{
-                        width: "36px", height: "36px", borderRadius: "10px",
-                        background: "rgba(255,255,255,0.18)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: "18px",
-                      }}>
-                        {plan.icon}
-                      </span>
-                      <span style={{ fontSize: "20px", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
-                        {plan.name}
-                      </span>
-                    </div>
-                    {isCurrent && (
-                      <span style={{
-                        fontSize: "10px", fontWeight: 700, padding: "3px 10px",
-                        borderRadius: "20px", letterSpacing: "0.05em",
-                        background: "rgba(255,255,255,0.25)",
-                        color: "#fff", border: "1px solid rgba(255,255,255,0.4)",
-                      }}>
-                        YOUR PLAN
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Price */}
-                  <div>
+                {/* Header */}
+                <div style={{ padding: "20px 20px 16px" }}>
+                  <p style={{ margin: "0 0 4px", fontSize: "15px", fontWeight: 700, color: "#111827" }}>
+                    {plan.name}
+                  </p>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "2px" }}>
                     {price === 0 ? (
-                      <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-                        <span style={{ fontSize: "48px", fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em" }}>
-                          Free
-                        </span>
-                        <span style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>forever</span>
-                      </div>
+                      <span style={{ fontSize: "28px", fontWeight: 800, color: "#111827" }}>$0</span>
                     ) : (
                       <>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: "2px" }}>
-                          <span style={{ fontSize: "22px", fontWeight: 700, color: "rgba(255,255,255,0.8)", alignSelf: "flex-start", marginTop: "8px" }}>$</span>
-                          <span style={{ fontSize: "52px", fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.04em" }}>
-                            {price}
-                          </span>
-                          <span style={{ fontSize: "15px", color: "rgba(255,255,255,0.65)", fontWeight: 500, marginBottom: "6px" }}>/mo</span>
-                        </div>
-                        {annual && (
-                          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>
-                            Billed ${plan.annualTotal}/year — saving ${(plan.monthlyPrice - plan.annualPrice) * 12}/year
-                          </p>
-                        )}
+                        <span style={{ fontSize: "28px", fontWeight: 800, color: "#111827" }}>${price}</span>
+                        <span style={{ fontSize: "13px", color: "#6b7280", fontWeight: 500 }}>/mo</span>
                       </>
                     )}
-                    <p style={{ margin: "10px 0 0", fontSize: "13px", color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
-                      {plan.tagline}
-                    </p>
                   </div>
+                  {annual && price > 0 && (
+                    <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#9ca3af" }}>
+                      Billed ${(price * 12).toFixed(2)}/year
+                    </p>
+                  )}
 
-                  {/* CTA */}
                   <button
                     onClick={() => handleSelect(plan)}
                     disabled={isCurrent}
                     style={{
-                      width: "100%", padding: "11px 0",
-                      borderRadius: "10px", border: "none",
+                      marginTop: "14px",
+                      width: "100%", padding: "9px 0",
+                      borderRadius: "8px", border: "none",
                       cursor: isCurrent ? "default" : "pointer",
-                      fontSize: "14px", fontWeight: 700,
-                      background: isCurrent ? "rgba(255,255,255,0.15)" : "#ffffff",
-                      color: isCurrent ? "rgba(255,255,255,0.5)" : plan.accentColor,
-                      letterSpacing: "0.01em",
-                      transition: "all 0.15s ease",
-                      boxShadow: isCurrent ? "none" : "0 2px 8px rgba(0,0,0,0.15)",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isCurrent) {
-                        (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                        (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isCurrent) {
-                        (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                        (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-                      }
+                      fontSize: "13px", fontWeight: 600,
+                      background: isCurrent ? "#f3f4f6" : plan.popular ? plan.accentColor : "#111827",
+                      color: isCurrent ? "#9ca3af" : "#ffffff",
+                      transition: "opacity 0.15s",
                     }}
                   >
                     {isCurrent ? "✓ Current plan" : plan.cta}
                   </button>
                 </div>
 
-                {/* Features list */}
-                <div style={{ background: "#ffffff", padding: plan.popular ? "24px 28px" : "20px 24px", display: "flex", flexDirection: "column", gap: plan.popular ? "12px" : "10px" }}>
-                  <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    What&apos;s included
-                  </p>
-                  {plan.features.map((f, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                      {f.included ? <Check color={plan.accentColor} /> : <Cross />}
-                      <span style={{
-                        fontSize: "13px", lineHeight: 1.5,
-                        color: f.included ? (f.highlight ? "#0f172a" : "#374151") : "#94a3b8",
-                        fontWeight: f.highlight && f.included ? 600 : 400,
-                      }}>
-                        {f.text}
-                      </span>
+                <div style={{ height: "1px", background: "#f3f4f6" }} />
+
+                {/* Feature groups */}
+                <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {plan.groups.map((group) => (
+                    <div key={group.category}>
+                      <p style={{ margin: "0 0 8px", fontSize: "10px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em" }}>
+                        {group.category}
+                      </p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {group.items.map((item, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                            {item.included ? <Check /> : <Cross />}
+                            <span style={{ fontSize: "12.5px", color: item.included ? "#374151" : "#9ca3af", lineHeight: 1.45 }}>
+                              {item.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -334,21 +310,21 @@ export default function PlansPage() {
 
         {/* Trust row */}
         <div style={{
-          display: "flex", alignItems: "center", gap: "32px",
+          display: "flex", alignItems: "center", gap: "28px",
           flexWrap: "wrap", justifyContent: "center",
-          padding: "20px 32px",
-          background: "#f8fafc", borderRadius: "14px",
-          border: "1px solid #e2e8f0", width: "100%",
+          padding: "16px 24px",
+          background: "#f9fafb", borderRadius: "12px",
+          border: "1px solid #e5e7eb",
         }}>
           {[
             { icon: "🔒", text: "No credit card required" },
-            { icon: "🔄", text: "Cancel or change plan anytime" },
-            { icon: "🎁", text: "7-day free trial on all paid plans" },
+            { icon: "🔄", text: "Cancel anytime" },
+            { icon: "🎁", text: "7-day free trial on paid plans" },
             { icon: "💬", text: "Support on every plan" },
           ].map(({ icon, text }) => (
-            <div key={text} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "16px" }}>{icon}</span>
-              <span style={{ fontSize: "13px", color: "#475569", fontWeight: 500 }}>{text}</span>
+            <div key={text} style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+              <span style={{ fontSize: "15px" }}>{icon}</span>
+              <span style={{ fontSize: "12.5px", color: "#6b7280", fontWeight: 500 }}>{text}</span>
             </div>
           ))}
         </div>

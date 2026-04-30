@@ -49,13 +49,6 @@
     return `<span class="er-stars" aria-label="${n} out of 5 stars">${out}</span>`;
   }
 
-  function parseBool(v, fallback) {
-    if (typeof v === "boolean") return v;
-    if (v === "true") return true;
-    if (v === "false") return false;
-    return fallback;
-  }
-
   function parseIntOr(v, fallback) {
     const n = parseInt(String(v), 10);
     return Number.isFinite(n) ? n : fallback;
@@ -103,12 +96,12 @@
       (config && config.mainTitle) ||
       "Reviews";
 
-    const accent = (opts.accent && String(opts.accent).trim()) || (config && config.mainAccentColor) || "#111111";
-    const showBreakdown = parseBool(opts.showBreakdown, config?.mainShowBreakdown ?? true);
-    const showWrite = parseBool(opts.showWrite, config?.mainShowWriteButton ?? true);
-    const pageSize = clamp(parseIntOr(opts.pageSize, config?.mainPageSize ?? 20), 4, 48);
-
-    const defaultSort = (opts.defaultSort || config?.mainDefaultSort || "latest").toString();
+    const accent = (config && config.mainAccentColor) || "#111111";
+    const showBreakdown = config?.mainShowBreakdown ?? true;
+    const showWrite = config?.mainShowWriteButton ?? true;
+    const showPhotosFilter = config?.mainShowWithPhotosFilter ?? true;
+    const pageSize = clamp(config?.mainPageSize ?? 20, 4, 48);
+    const defaultSort = (config?.mainDefaultSort || "latest").toString();
 
     root.style.setProperty("--er-accent", accent);
 
@@ -159,10 +152,10 @@
         <div class="er-tools">
           <div class="er-tools__left">
             <span class="er-tools__count" data-er-count></span>
-            <button type="button" class="er-chip" data-er-photos>
+            ${showPhotosFilter ? `<button type="button" class="er-chip" data-er-photos>
               <span class="er-chip__dot"></span>
               with pictures
-            </button>
+            </button>` : ""}
           </div>
           <div class="er-tools__right">
             <label class="er-select">
@@ -410,15 +403,12 @@
       (config && config.cardTitle) ||
       "Customers are saying";
 
-    const accent =
-      (opts.accent && String(opts.accent).trim()) ||
-      (config && config.cardAccentColor) ||
-      "#111111";
-
-    const showRating = parseBool(opts.showRating, config?.cardShowRating ?? true);
-    const showName = parseBool(opts.showName, config?.cardShowName ?? true);
-    const showBadge = parseBool(opts.showBadge, config?.cardShowBadge ?? true);
-    const maxChars = clamp(parseIntOr(opts.maxChars, config?.cardMaxChars ?? 120), 60, 260);
+    const accent = (config && config.cardAccentColor) || "#111111";
+    const showRating = config?.cardShowRating ?? true;
+    const showName = config?.cardShowName ?? true;
+    const showBadge = config?.cardShowBadge ?? true;
+    const showProduct = config?.cardShowProduct ?? true;
+    const maxChars = clamp(config?.cardMaxChars ?? 120, 60, 260);
     const perView = clamp(parseIntOr(opts.cardsPerView, 4), 2, 6);
 
     root.style.setProperty("--er-accent", accent);
@@ -466,6 +456,7 @@
                             ? `<div class="er-cardC__name">${escapeHtml(name)}${showBadge ? ` ${SVG_VERIFIED}` : ""}</div>`
                             : ""
                         }
+                        ${showProduct && r.productTitle ? `<div class="er-cardC__product">${escapeHtml(r.productTitle)}</div>` : ""}
                       </div>
                     </article>
                   `;
@@ -522,20 +513,8 @@
     const submitUrl = root.getAttribute("data-er-submit") || "";
     const titleOverride = root.getAttribute("data-er-title-override") || "";
 
-    const accent = root.getAttribute("data-er-accent") || "";
-    const showBreakdown = root.getAttribute("data-er-show-breakdown");
-    const showWrite = root.getAttribute("data-er-show-write");
-    const defaultSort = root.getAttribute("data-er-default-sort") || "latest";
-    const pageSize = root.getAttribute("data-er-page-size") || "20";
-
     const productId = root.getAttribute("data-er-product-id") || "";
     const productTitle = root.getAttribute("data-er-product-title") || "";
-
-    const showRating = root.getAttribute("data-er-show-rating");
-    const showName = root.getAttribute("data-er-show-name");
-    const showBadge = root.getAttribute("data-er-show-badge");
-    const showProduct = root.getAttribute("data-er-show-product");
-    const maxChars = root.getAttribute("data-er-max-chars") || "";
     const cardsPerView = root.getAttribute("data-er-cards-per-view") || "";
 
     if (!endpoint) {
@@ -549,28 +528,9 @@
       if (!res.ok || data?.error) throw new Error(data?.error || "Failed to load reviews");
 
       if (widget === "card") {
-        buildCardCarousel(root, data, {
-          titleOverride,
-          accent,
-          showRating,
-          showName,
-          showBadge,
-          showProduct,
-          maxChars,
-          cardsPerView,
-        });
+        buildCardCarousel(root, data, { titleOverride, cardsPerView });
       } else {
-        buildMainWidget(root, data, {
-          submitUrl,
-          titleOverride,
-          accent,
-          showBreakdown,
-          showWrite,
-          defaultSort,
-          pageSize,
-          productId,
-          productTitle,
-        });
+        buildMainWidget(root, data, { submitUrl, titleOverride, productId, productTitle });
       }
     } catch (err) {
       root.innerHTML = `

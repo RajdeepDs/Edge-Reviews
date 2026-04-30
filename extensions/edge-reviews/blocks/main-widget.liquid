@@ -1,16 +1,12 @@
 {%- comment -%}
   Edge Reviews — Main widget
-  This block renders a lightweight shell and a JS mount point.
+  Block settings = placement-level overrides only.
+  All other config (colors, toggles, sort, page size) is managed in the Edge Reviews admin app
+  and served via the widget API endpoint.
 {%- endcomment -%}
 
 {%- assign er_shop = shop.permanent_domain | default: shop.domain -%}
 {%- assign er_shop_param = er_shop | url_encode -%}
-{%- comment -%}
-  App proxy config maps:
-    /apps/edge-reviews/<path>  ->  <application_url>/api/<path>
-  Since our backend routes are /api/widget and /api/reviews, the proxy path should be:
-    /apps/edge-reviews/widget  and  /apps/edge-reviews/reviews
-{%- endcomment -%}
 {%- assign er_endpoint = '/apps/edge-reviews/widget?shop=' | append: er_shop_param -%}
 {%- assign er_submit = '/apps/edge-reviews/reviews?shop=' | append: er_shop_param -%}
 
@@ -51,14 +47,9 @@
   data-er-submit="{{ er_submit }}"
   data-er-product-id="{{ er_product_id }}"
   data-er-product-title="{{ er_product_title | escape }}"
-  data-er-title-override="{{ block.settings.title | escape }}"
-  data-er-accent="{{ block.settings.accent_color }}"
-  data-er-show-breakdown="{{ block.settings.show_breakdown }}"
-  data-er-show-write="{{ block.settings.show_write_button }}"
-  data-er-default-sort="{{ block.settings.default_sort }}"
-  data-er-page-size="{{ block.settings.page_size }}"
+  {%- if block.settings.title != blank %}data-er-title-override="{{ block.settings.title | escape }}"{% endif %}
 >
-  <div class="er-widget er-widget--main" style="--er-accent: {{ block.settings.accent_color }};">
+  <div class="er-widget er-widget--main">
     <div class="er-shell">
       <div class="er-shell__header">
         <div class="er-shell__title"></div>
@@ -91,49 +82,8 @@
     {
       "type": "text",
       "id": "title",
-      "label": "t:blocks.main_widget.settings.title",
-      "default": "Reviews"
-    },
-    {
-      "type": "color",
-      "id": "accent_color",
-      "label": "t:blocks.main_widget.settings.accent_color",
-      "default": "#111111"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_breakdown",
-      "label": "t:blocks.main_widget.settings.show_breakdown",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "show_write_button",
-      "label": "t:blocks.main_widget.settings.show_write_button",
-      "default": true
-    },
-    {
-      "type": "select",
-      "id": "default_sort",
-      "label": "t:blocks.main_widget.settings.default_sort",
-      "default": "latest",
-      "options": [
-        { "value": "latest", "label": "Latest" },
-        { "value": "highest", "label": "Highest rating" },
-        { "value": "lowest", "label": "Lowest rating" }
-      ]
-    },
-    {
-      "type": "range",
-      "id": "page_size",
-      "min": 4,
-      "max": 48,
-      "step": 4,
-      "unit": "rev",
-      "label": "t:blocks.main_widget.settings.page_size",
-      "default": 20
+      "label": "t:blocks.main_widget.settings.title"
     }
   ]
 }
 {% endschema %}
-

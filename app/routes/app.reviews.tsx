@@ -6,6 +6,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { ReviewsTable } from "app/components/reviews/reviews-table";
 import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal";
 import prisma from "../db.server";
+import { uploadReviewImage } from "../utils/cloudinary.server";
 
 // ── Loader ────────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     reviews: reviews.map((r) => ({
       id: r.id,
       customer: r.customerName,
+      customerEmail: r.customerEmail ?? null,
       initials: r.customerName
         .trim()
         .split(/\s+/)
@@ -83,6 +85,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
+
+  // ── Edit review ───────────────────────────────────────────────────────────────
+  if (intent === "edit-review") {
+    const id = formData.get("id") as string;
+    const customerName = (formData.get("customerName") as string).trim();
+    const customerEmail = (formData.get("customerEmail") as string)?.trim() || null;
+    const rating = parseInt(formData.get("rating") as string, 10);
+    const status = formData.get("status") as string;
+    const title = (formData.get("title") as string)?.trim() || null;
+    const body = (formData.get("body") as string).trim();
+    const imageFile = formData.get("image") as File | null;
+    const removeImage = formData.get("removeImage") === "true";
+
+    let imageUrlUpdate: { imageUrl: string | null } | undefined;
+    if (removeImage) {
+      imageUrlUpdate = { imageUrl: null };
+    } else if (imageFile && imageFile.size > 0) {
+      imageUrlUpdate = { imageUrl: await uploadReviewImage(imageFile) };
+    }
+
+    await prisma.review.update({
+      where: { id },
+      data: {
+        customerName,
+        customerEmail,
+        rating,
+        status,
+        title,
+        body,
+        ...imageUrlUpdate,
+      },
+    });
+
+    return { ok: true, intent };
+  }
 
   // ── Toggle single review status ──────────────────────────────────────────────
   if (intent === "toggle-status") {

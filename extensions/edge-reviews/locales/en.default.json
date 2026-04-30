@@ -6,7 +6,8 @@
         "title": "Title (optional override)",
         "accent_color": "Accent color",
         "show_breakdown": "Show rating breakdown",
-        "show_write_button": "Show “Write a review” button",
+        "show_write_button": "Show Write a review button",
+        "show_with_photos_filter": "Show with pictures filter",
         "default_sort": "Default sort",
         "page_size": "Reviews per page"
       }

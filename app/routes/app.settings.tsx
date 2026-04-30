@@ -36,7 +36,7 @@ export default function SettingsPage() {
   const shopify = useAppBridge();
 
   const [settings, setSettings] = useState({
-    importAutoPublish: false,
+    importAutoPublish: true,
     importDuplicateDetection: true,
     importSourceLabel: "CSV Import",
     importMinRating: "1",
@@ -56,34 +56,14 @@ export default function SettingsPage() {
     widgetLayout: "list",
     accentColor: "#EF9F27",
 
-    emailOnNewReview: true,
-    notificationEmail: "",
-    digestFrequency: "instant",
-
     displayName: "",
     replySignature: "",
   });
 
-  const [emailError, setEmailError] = useState("");
-
   const update = (key: keyof typeof settings, value: string | boolean) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
 
-  const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-
   const handleSave = () => shopify.toast.show("Settings saved!");
-
-  const handleSendTestNotification = () => {
-    if (!settings.notificationEmail) {
-      setEmailError("Enter an email address before sending a test.");
-      return;
-    }
-    if (!isValidEmail(settings.notificationEmail)) {
-      setEmailError("Enter a valid email address.");
-      return;
-    }
-    shopify.toast.show(`Test notification sent to ${settings.notificationEmail}`);
-  };
 
   return (
     <s-page heading="Settings" inlineSize="base">
@@ -330,68 +310,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </s-stack>
-          </s-stack>
-        </s-section>
-
-        {/* ── Notifications ── */}
-        <s-section heading="Notifications">
-          <s-stack gap="base">
-            <s-text color="subdued">
-              Stay informed when new reviews are submitted to your store.
-            </s-text>
-            <s-divider />
-
-            <SettingToggleRow
-              title="Email notifications"
-              description="Receive an email when a new review is submitted."
-              checked={settings.emailOnNewReview}
-              onToggle={() => update("emailOnNewReview", !settings.emailOnNewReview)}
-            />
-
-            {settings.emailOnNewReview && (
-              <>
-                <s-divider />
-                <s-grid gridTemplateColumns="1fr 1fr" gap="base">
-                  <s-stack gap="small-200">
-                    <s-text>Notification email</s-text>
-                    <s-text color="subdued">Address where notifications will be sent.</s-text>
-                    <div onInput={(e: FormEvent<HTMLDivElement>) => {
-                      const val = (e.target as HTMLInputElement).value;
-                      update("notificationEmail", val);
-                      setEmailError(val && !isValidEmail(val) ? "Enter a valid email address." : "");
-                    }}>
-                      <s-text-field
-                        value={settings.notificationEmail}
-                        placeholder="you@yourstore.com"
-                        error={emailError || undefined}
-                      />
-                    </div>
-                    {emailError && (
-                      <div style={{ color: "#b52b27" }}>
-                        <s-text color="base">{emailError}</s-text>
-                      </div>
-                    )}
-                    <s-button
-                      variant="secondary"
-                      onClick={handleSendTestNotification}
-                    >
-                      Send test notification
-                    </s-button>
-                  </s-stack>
-                  <s-stack gap="small-200">
-                    <s-text>Frequency</s-text>
-                    <s-text color="subdued">How often to receive notification emails.</s-text>
-                    <div onChange={(e: FormEvent<HTMLDivElement>) => update("digestFrequency", (e.target as HTMLSelectElement).value)}>
-                      <s-select value={settings.digestFrequency}>
-                        <s-option value="instant">Instant</s-option>
-                        <s-option value="daily">Daily digest</s-option>
-                        <s-option value="weekly">Weekly digest</s-option>
-                      </s-select>
-                    </div>
-                  </s-stack>
-                </s-grid>
-              </>
-            )}
           </s-stack>
         </s-section>
 

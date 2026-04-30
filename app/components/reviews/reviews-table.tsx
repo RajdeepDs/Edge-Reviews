@@ -14,12 +14,14 @@ import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { useFetcher, useSearchParams } from "react-router";
 import { Stars } from "../Stars";
+import { EditReviewModal } from "./edit-review-modal";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type ReviewRow = {
   id: string;
   customer: string;
+  customerEmail: string | null;
   initials: string;
   title: string | null;
   rating: number;
@@ -73,6 +75,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
   const [productFilter, setProductFilter] = useState<string[] | undefined>(undefined);
   const [sortSelected, setSortSelected] = useState(["date desc"]);
   const [page, setPage] = useState(1);
+  const [editingReview, setEditingReview] = useState<ReviewRow | null>(null);
   const { mode, setMode } = useSetIndexFiltersMode();
 
   // Optimistic local statuses — seeded from DB, updated immediately on toggle
@@ -267,6 +270,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
         key={review.id}
         selected={selectedResources.includes(review.id)}
         position={(safePage - 1) * PAGE_SIZE + index}
+        onClick={() => setEditingReview(review)}
       >
         <IndexTable.Cell>
           <div style={{ width: 40, height: 40, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
@@ -312,6 +316,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
   });
 
   return (
+    <>
     <LegacyCard>
       <IndexFilters
         sortOptions={sortOptions}
@@ -370,5 +375,11 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
         </div>
       )}
     </LegacyCard>
+
+    <EditReviewModal
+      review={editingReview}
+      onClose={() => setEditingReview(null)}
+    />
+    </>
   );
 }

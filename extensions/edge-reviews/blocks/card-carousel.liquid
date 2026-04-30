@@ -1,5 +1,7 @@
 {%- comment -%}
-  Edge Reviews — Card carousel (image + text)
+  Edge Reviews — Card carousel
+  Block settings = placement-level overrides only.
+  All other config is managed in the Edge Reviews admin app.
 {%- endcomment -%}
 
 {%- assign er_shop = shop.permanent_domain | default: shop.domain -%}
@@ -35,16 +37,10 @@
   data-er-widget="card"
   data-er-shop="{{ er_shop }}"
   data-er-endpoint="{{ er_endpoint }}"
-  data-er-title-override="{{ block.settings.title | escape }}"
-  data-er-accent="{{ block.settings.accent_color }}"
-  data-er-show-rating="{{ block.settings.show_rating }}"
-  data-er-show-name="{{ block.settings.show_name }}"
-  data-er-show-badge="{{ block.settings.show_badge }}"
-  data-er-show-product="{{ block.settings.show_product }}"
-  data-er-max-chars="{{ block.settings.max_chars }}"
+  {%- if block.settings.title != blank %}data-er-title-override="{{ block.settings.title | escape }}"{% endif %}
   data-er-cards-per-view="{{ block.settings.cards_per_view }}"
 >
-  <div class="er-widget er-widget--card" style="--er-accent: {{ block.settings.accent_color }};">
+  <div class="er-widget er-widget--card">
     <div class="er-shell">
       <div class="er-shell__header er-shell__header--center">
         <div class="er-shell__title"></div>
@@ -81,48 +77,7 @@
     {
       "type": "text",
       "id": "title",
-      "label": "t:blocks.card_carousel.settings.title",
-      "default": "Customers are saying"
-    },
-    {
-      "type": "color",
-      "id": "accent_color",
-      "label": "t:blocks.card_carousel.settings.accent_color",
-      "default": "#111111"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_rating",
-      "label": "t:blocks.card_carousel.settings.show_rating",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "show_name",
-      "label": "t:blocks.card_carousel.settings.show_name",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "show_badge",
-      "label": "t:blocks.card_carousel.settings.show_badge",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "show_product",
-      "label": "t:blocks.card_carousel.settings.show_product",
-      "default": true
-    },
-    {
-      "type": "range",
-      "id": "max_chars",
-      "min": 60,
-      "max": 220,
-      "step": 10,
-      "unit": "chr",
-      "label": "t:blocks.card_carousel.settings.max_chars",
-      "default": 120
+      "label": "t:blocks.card_carousel.settings.title"
     },
     {
       "type": "range",
@@ -137,4 +92,3 @@
   ]
 }
 {% endschema %}
-
