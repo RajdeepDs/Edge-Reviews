@@ -52,25 +52,20 @@ export default function SettingsPage() {
     showReviewCount: true,
     showVerifiedBadge: true,
     showReviewerAvatar: true,
-    widgetTheme: "light",
-    widgetLayout: "list",
-    accentColor: "#EF9F27",
-
-    displayName: "",
-    replySignature: "",
   });
+
+  const save = () => shopify.toast.show("Settings saved!");
 
   const update = (key: keyof typeof settings, value: string | boolean) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
 
-  const handleSave = () => shopify.toast.show("Settings saved!");
+  const updateAndSave = (key: keyof typeof settings, value: string | boolean) => {
+    update(key, value);
+    save();
+  };
 
   return (
     <s-page heading="Settings" inlineSize="base">
-      <s-button slot="primary-action" variant="primary" onClick={handleSave}>
-        Save
-      </s-button>
-
       <s-stack gap="large">
 
         {/* ── Import Settings ── */}
@@ -85,7 +80,7 @@ export default function SettingsPage() {
               title="Auto-publish imported reviews"
               description="Imported CSV reviews will be published immediately without manual approval."
               checked={settings.importAutoPublish}
-              onToggle={() => update("importAutoPublish", !settings.importAutoPublish)}
+              onToggle={() => updateAndSave("importAutoPublish", !settings.importAutoPublish)}
             />
 
             {settings.importAutoPublish && (
@@ -96,7 +91,7 @@ export default function SettingsPage() {
                   <s-text color="subdued">
                     Reviews below this rating are held for manual review instead of being published automatically.
                   </s-text>
-                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("importMinRating", (e.target as HTMLSelectElement).value)}>
+                  <div onChange={(e: FormEvent<HTMLDivElement>) => updateAndSave("importMinRating", (e.target as HTMLSelectElement).value)}>
                     <s-select value={settings.importMinRating}>
                       <s-option value="5">5 stars only</s-option>
                       <s-option value="4">4 stars and above</s-option>
@@ -115,7 +110,7 @@ export default function SettingsPage() {
               title="Duplicate detection"
               description="Skip reviews that already exist based on customer email and product combination."
               checked={settings.importDuplicateDetection}
-              onToggle={() => update("importDuplicateDetection", !settings.importDuplicateDetection)}
+              onToggle={() => updateAndSave("importDuplicateDetection", !settings.importDuplicateDetection)}
             />
 
             <s-divider />
@@ -125,7 +120,10 @@ export default function SettingsPage() {
               <s-text color="subdued">
                 Label shown in the Source column for reviews imported via CSV.
               </s-text>
-              <div onInput={(e: FormEvent<HTMLDivElement>) => update("importSourceLabel", (e.target as HTMLInputElement).value)}>
+              <div
+                onInput={(e: FormEvent<HTMLDivElement>) => update("importSourceLabel", (e.target as HTMLInputElement).value)}
+                onBlur={save}
+              >
                 <s-text-field
                   value={settings.importSourceLabel}
                   placeholder="CSV Import"
@@ -147,7 +145,7 @@ export default function SettingsPage() {
               title="Auto-publish reviews"
               description="Publish new reviews automatically without manual approval. Reviews that don't meet criteria will be held in Pending for manual approval."
               checked={settings.autoPublish}
-              onToggle={() => update("autoPublish", !settings.autoPublish)}
+              onToggle={() => updateAndSave("autoPublish", !settings.autoPublish)}
             />
 
             {settings.autoPublish && (
@@ -158,7 +156,7 @@ export default function SettingsPage() {
                   <s-text color="subdued">
                     Reviews below this threshold are held for manual review.
                   </s-text>
-                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("minAutoPublishRating", (e.target as HTMLSelectElement).value)}>
+                  <div onChange={(e: FormEvent<HTMLDivElement>) => updateAndSave("minAutoPublishRating", (e.target as HTMLSelectElement).value)}>
                     <s-select value={settings.minAutoPublishRating}>
                       <s-option value="5">5 stars only</s-option>
                       <s-option value="4">4 stars and above</s-option>
@@ -177,7 +175,7 @@ export default function SettingsPage() {
               title="Flag profanity"
               description="Hold reviews containing profanity for manual review before publishing."
               checked={settings.flagProfanity}
-              onToggle={() => update("flagProfanity", !settings.flagProfanity)}
+              onToggle={() => updateAndSave("flagProfanity", !settings.flagProfanity)}
             />
 
             <s-divider />
@@ -187,7 +185,7 @@ export default function SettingsPage() {
               description="Only allow reviews from customers who have purchased the product."
               checked={settings.requireVerifiedPurchase}
               onToggle={() =>
-                update("requireVerifiedPurchase", !settings.requireVerifiedPurchase)
+                updateAndSave("requireVerifiedPurchase", !settings.requireVerifiedPurchase)
               }
             />
 
@@ -198,7 +196,10 @@ export default function SettingsPage() {
               <s-text color="subdued">
                 Reviews shorter than this will be rejected. Use this to filter out low-effort submissions like &quot;ok&quot; or &quot;good&quot;.
               </s-text>
-              <div onInput={(e: FormEvent<HTMLDivElement>) => update("minReviewLength", (e.target as HTMLInputElement).value)}>
+              <div
+                onInput={(e: FormEvent<HTMLDivElement>) => update("minReviewLength", (e.target as HTMLInputElement).value)}
+                onBlur={save}
+              >
                 <s-text-field
                   value={settings.minReviewLength}
                   placeholder="10"
@@ -212,7 +213,7 @@ export default function SettingsPage() {
               title="Auto-reject 1★ reviews"
               description="Automatically reject all one-star reviews without manual review. Useful for merchants who want to curate their storefront aggressively."
               checked={settings.autoRejectOneStar}
-              onToggle={() => update("autoRejectOneStar", !settings.autoRejectOneStar)}
+              onToggle={() => updateAndSave("autoRejectOneStar", !settings.autoRejectOneStar)}
             />
           </s-stack>
         </s-section>
@@ -229,7 +230,7 @@ export default function SettingsPage() {
                 title="Show star rating"
                 description="Display the average star rating at the top of the reviews section."
                 checked={settings.showStarRating}
-                onToggle={() => update("showStarRating", !settings.showStarRating)}
+                onToggle={() => updateAndSave("showStarRating", !settings.showStarRating)}
               />
 
               <s-divider />
@@ -238,7 +239,7 @@ export default function SettingsPage() {
                 title="Show review count"
                 description="Display the total number of reviews next to the star rating."
                 checked={settings.showReviewCount}
-                onToggle={() => update("showReviewCount", !settings.showReviewCount)}
+                onToggle={() => updateAndSave("showReviewCount", !settings.showReviewCount)}
               />
 
               <s-divider />
@@ -247,7 +248,7 @@ export default function SettingsPage() {
                 title="Show verified purchase badge"
                 description="Display a badge on reviews from customers who purchased the product."
                 checked={settings.showVerifiedBadge}
-                onToggle={() => update("showVerifiedBadge", !settings.showVerifiedBadge)}
+                onToggle={() => updateAndSave("showVerifiedBadge", !settings.showVerifiedBadge)}
               />
 
               <s-divider />
@@ -256,92 +257,9 @@ export default function SettingsPage() {
                 title="Show reviewer avatar"
                 description="Display an avatar with the reviewer's initials next to their name."
                 checked={settings.showReviewerAvatar}
-                onToggle={() => update("showReviewerAvatar", !settings.showReviewerAvatar)}
+                onToggle={() => updateAndSave("showReviewerAvatar", !settings.showReviewerAvatar)}
               />
 
-              <s-divider />
-
-              <s-grid gridTemplateColumns="1fr 1fr" gap="base">
-                <s-stack gap="small-200">
-                  <s-text>Widget theme</s-text>
-                  <s-text color="subdued">Color theme for the reviews widget.</s-text>
-                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("widgetTheme", (e.target as HTMLSelectElement).value)}>
-                    <s-select value={settings.widgetTheme}>
-                      <s-option value="light">Light</s-option>
-                      <s-option value="dark">Dark</s-option>
-                      <s-option value="auto">Match store theme</s-option>
-                    </s-select>
-                  </div>
-                </s-stack>
-                <s-stack gap="small-200">
-                  <s-text>Widget layout</s-text>
-                  <s-text color="subdued">How reviews are arranged on the page.</s-text>
-                  <div onChange={(e: FormEvent<HTMLDivElement>) => update("widgetLayout", (e.target as HTMLSelectElement).value)}>
-                    <s-select value={settings.widgetLayout}>
-                      <s-option value="list">List</s-option>
-                      <s-option value="grid">Grid</s-option>
-                      <s-option value="carousel">Carousel</s-option>
-                    </s-select>
-                  </div>
-                </s-stack>
-              </s-grid>
-
-              <s-divider />
-
-              <s-stack gap="small-200">
-                <s-text>Accent color</s-text>
-                <s-text color="subdued">Applied to stars, badges, and verified purchase labels.</s-text>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <input
-                    type="color"
-                    value={settings.accentColor}
-                    onChange={(e) => update("accentColor", e.target.value)}
-                    style={{ width: "36px", height: "36px", padding: "2px", border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer", background: "none" }}
-                  />
-                  <div onInput={(e: FormEvent<HTMLDivElement>) => {
-                    const val = (e.target as HTMLInputElement).value;
-                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) update("accentColor", val);
-                  }}>
-                    <s-text-field
-                      value={settings.accentColor}
-                      placeholder="#EF9F27"
-                      maxLength={7}
-                    />
-                  </div>
-                </div>
-              </s-stack>
-          </s-stack>
-        </s-section>
-
-        {/* ── Branding ── */}
-        <s-section heading="Branding">
-          <s-stack gap="base">
-            <s-text color="subdued">
-              Control how your business appears in review emails and customer-facing responses.
-            </s-text>
-            <s-divider />
-            <s-grid gridTemplateColumns="1fr 1fr" gap="base">
-              <s-stack gap="small-200">
-                <s-text>Display name</s-text>
-                <s-text color="subdued">Business name shown in emails and the widget.</s-text>
-                <div onInput={(e: FormEvent<HTMLDivElement>) => update("displayName", (e.target as HTMLInputElement).value)}>
-                  <s-text-field
-                    value={settings.displayName}
-                    placeholder="Your Store Name"
-                  />
-                </div>
-              </s-stack>
-              <s-stack gap="small-200">
-                <s-text>Reply signature</s-text>
-                <s-text color="subdued">Appended to the end of your review replies.</s-text>
-                <div onInput={(e: FormEvent<HTMLDivElement>) => update("replySignature", (e.target as HTMLInputElement).value)}>
-                  <s-text-field
-                    value={settings.replySignature}
-                    placeholder="— The Team at Your Store"
-                  />
-                </div>
-              </s-stack>
-            </s-grid>
           </s-stack>
         </s-section>
 
