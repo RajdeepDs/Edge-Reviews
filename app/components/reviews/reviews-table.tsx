@@ -69,6 +69,8 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
   const [selected, setSelected] = useState(initialTab);
   const [queryValue, setQueryValue] = useState("");
   const [ratingFilter, setRatingFilter] = useState<string[] | undefined>(undefined);
+  const [photoFilter, setPhotoFilter] = useState<string[] | undefined>(undefined);
+  const [productFilter, setProductFilter] = useState<string[] | undefined>(undefined);
   const [sortSelected, setSortSelected] = useState(["date desc"]);
   const [page, setPage] = useState(1);
   const { mode, setMode } = useSetIndexFiltersMode();
@@ -110,10 +112,20 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
 
   const handleRatingFilterChange = useCallback((v: string[]) => { setRatingFilter(v); setPage(1); }, []);
   const handleRatingFilterRemove = useCallback(() => { setRatingFilter(undefined); setPage(1); }, []);
+  const handlePhotoFilterChange = useCallback((v: string[]) => { setPhotoFilter(v); setPage(1); }, []);
+  const handlePhotoFilterRemove = useCallback(() => { setPhotoFilter(undefined); setPage(1); }, []);
+  const handleProductFilterChange = useCallback((v: string[]) => { setProductFilter(v); setPage(1); }, []);
+  const handleProductFilterRemove = useCallback(() => { setProductFilter(undefined); setPage(1); }, []);
   const handleQueryChange = useCallback((v: string) => { setQueryValue(v); setPage(1); }, []);
   const handleQueryClear = useCallback(() => { setQueryValue(""); setPage(1); }, []);
   const handleSortChange = useCallback((v: string[]) => { setSortSelected(v); setPage(1); }, []);
-  const handleFiltersClearAll = useCallback(() => { setRatingFilter(undefined); setQueryValue(""); setPage(1); }, []);
+  const handleFiltersClearAll = useCallback(() => {
+    setRatingFilter(undefined);
+    setPhotoFilter(undefined);
+    setProductFilter(undefined);
+    setQueryValue("");
+    setPage(1);
+  }, []);
 
   const filters = [
     {
@@ -131,6 +143,37 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
       ),
       shortcut: true,
     },
+    {
+      key: "photo",
+      label: "Photo",
+      filter: (
+        <ChoiceList
+          title="Photo"
+          titleHidden
+          choices={[
+            { label: "Has photo", value: "yes" },
+            { label: "No photo", value: "no" },
+          ]}
+          selected={photoFilter || []}
+          onChange={handlePhotoFilterChange}
+        />
+      ),
+      shortcut: true,
+    },
+    {
+      key: "product",
+      label: "Product",
+      filter: (
+        <ChoiceList
+          title="Product"
+          titleHidden
+          choices={Array.from(new Set(reviews.map((r) => r.product))).sort().map((p) => ({ label: p, value: p }))}
+          selected={productFilter || []}
+          onChange={handleProductFilterChange}
+          allowMultiple
+        />
+      ),
+    },
   ];
 
   const appliedFilters: IndexFiltersProps["appliedFilters"] = [];
@@ -139,6 +182,20 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
       key: "rating",
       label: `Rating: ${ratingFilter.map((r) => `${r}★`).join(", ")}`,
       onRemove: handleRatingFilterRemove,
+    });
+  }
+  if (photoFilter?.length) {
+    appliedFilters.push({
+      key: "photo",
+      label: `Photo: ${photoFilter[0] === "yes" ? "Has photo" : "No photo"}`,
+      onRemove: handlePhotoFilterRemove,
+    });
+  }
+  if (productFilter?.length) {
+    appliedFilters.push({
+      key: "product",
+      label: `Product: ${productFilter.join(", ")}`,
+      onRemove: handleProductFilterRemove,
     });
   }
 
@@ -158,6 +215,8 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
       return r.customer.toLowerCase().includes(q) || r.product.toLowerCase().includes(q);
     })
     .filter((r) => (!ratingFilter?.length) || ratingFilter.includes(String(r.rating)))
+    .filter((r) => !photoFilter?.length || (photoFilter[0] === "yes" ? r.imageUrl !== null : r.imageUrl === null))
+    .filter((r) => !productFilter?.length || productFilter.includes(r.product))
     .sort((a, b) => {
       const [field, dir] = sortSelected[0].split(" ");
       const m = dir === "asc" ? 1 : -1;
