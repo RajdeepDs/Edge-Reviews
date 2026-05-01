@@ -8,6 +8,11 @@
 {%- assign er_shop_param = er_shop | url_encode -%}
 {%- assign er_endpoint = '/apps/edge-reviews/widget?shop=' | append: er_shop_param -%}
 
+{%- assign er_product_id = '' -%}
+{%- if product -%}
+  {%- assign er_product_id = product.id -%}
+{%- endif -%}
+
 <script>
   (function () {
     if (window.__edgeReviewsAssetsLoaded) return;
@@ -37,36 +42,9 @@
   data-er-widget="card"
   data-er-shop="{{ er_shop }}"
   data-er-endpoint="{{ er_endpoint }}"
+  data-er-product-id="{{ er_product_id }}"
   data-er-cards-per-view="{{ block.settings.cards_per_view }}"
->
-  <div class="er-widget er-widget--card">
-    <div class="er-shell">
-      <div class="er-shell__header er-shell__header--center">
-        <div class="er-shell__title"></div>
-        <div class="er-shell__meta">
-          <div class="er-skel er-skel--stars"></div>
-          <div class="er-skel er-skel--text"></div>
-        </div>
-      </div>
-      <div class="er-cardCarousel__shell">
-        <div class="er-skel er-skel--pill" style="width:36px;height:36px;border-radius:999px;"></div>
-        <div class="er-shell__grid er-shell__grid--carousel">
-          {%- for i in (1..4) -%}
-            <div class="er-card er-card--skeleton" aria-hidden="true">
-              <div class="er-skel er-skel--media"></div>
-              <div class="er-card__body">
-                <div class="er-skel er-skel--line"></div>
-                <div class="er-skel er-skel--line er-skel--lineShort"></div>
-                <div class="er-skel er-skel--starsSmall"></div>
-              </div>
-            </div>
-          {%- endfor -%}
-        </div>
-        <div class="er-skel er-skel--pill" style="width:36px;height:36px;border-radius:999px;"></div>
-      </div>
-    </div>
-  </div>
-</section>
+></section>
 
 {% schema %}
 {

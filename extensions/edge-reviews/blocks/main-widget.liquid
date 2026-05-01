@@ -47,31 +47,7 @@
   data-er-submit="{{ er_submit }}"
   data-er-product-id="{{ er_product_id }}"
   data-er-product-title="{{ er_product_title | escape }}"
->
-  <div class="er-widget er-widget--main">
-    <div class="er-shell">
-      <div class="er-shell__header">
-        <div class="er-shell__title"></div>
-        <div class="er-shell__meta">
-          <div class="er-skel er-skel--stars"></div>
-          <div class="er-skel er-skel--text"></div>
-        </div>
-      </div>
-      <div class="er-shell__grid">
-        {%- for i in (1..8) -%}
-          <div class="er-card er-card--skeleton" aria-hidden="true">
-            <div class="er-skel er-skel--media"></div>
-            <div class="er-card__body">
-              <div class="er-skel er-skel--line"></div>
-              <div class="er-skel er-skel--line er-skel--lineShort"></div>
-              <div class="er-skel er-skel--starsSmall"></div>
-            </div>
-          </div>
-        {%- endfor -%}
-      </div>
-    </div>
-  </div>
-</section>
+></section>
 
 {% schema %}
 {

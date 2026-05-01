@@ -12,15 +12,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 204, headers: CORS });
   }
 
-  const shop = new URL(request.url).searchParams.get("shop");
+  const url = new URL(request.url);
+  const shop = url.searchParams.get("shop");
   if (!shop) {
     return Response.json({ error: "Missing shop" }, { status: 400, headers: CORS });
   }
 
+  const productId = url.searchParams.get("product_id") || null;
+
   const [config, reviews] = await Promise.all([
     prisma.widgetConfig.findUnique({ where: { shop } }),
     prisma.review.findMany({
-      where: { shop, status: "published" },
+      where: {
+        shop,
+        status: "published",
+        ...(productId ? { shopifyProductId: productId } : {}),
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
       select: {

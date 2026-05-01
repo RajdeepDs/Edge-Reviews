@@ -515,9 +515,22 @@
     }
 
     try {
-      const res = await fetch(endpoint, { method: "GET", headers: { Accept: "application/json" } });
+      // Scope reviews to the current product. Liquid's product.id is numeric;
+      // construct the full GID to match how shopifyProductId is stored in the DB.
+      let fetchUrl = endpoint;
+      if (productId) {
+        const gid = "gid://shopify/Product/" + productId;
+        fetchUrl = endpoint + (endpoint.includes("?") ? "&" : "?") + "product_id=" + encodeURIComponent(gid);
+      }
+      const res = await fetch(fetchUrl, { method: "GET", headers: { Accept: "application/json" } });
       const data = await res.json();
       if (!res.ok || data?.error) throw new Error(data?.error || "Failed to load reviews");
+
+      // No reviews for this product — remove the widget from the page entirely.
+      if (!data.stats?.total) {
+        root.style.display = "none";
+        return;
+      }
 
       if (widget === "card") {
         buildCardCarousel(root, data, { cardsPerView });
