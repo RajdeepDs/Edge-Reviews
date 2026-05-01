@@ -1,4 +1,10 @@
 import prisma from "../db.server";
+import {
+  PLAN_BASIC,
+  PLAN_BASIC_ANNUAL,
+  PLAN_BUSINESS,
+  PLAN_BUSINESS_ANNUAL,
+} from "../plans.constants";
 
 export type PlanId = "free" | "basic" | "business";
 
@@ -10,10 +16,22 @@ export const PLAN_LIMITS = {
 
 export type PlanLimits = typeof PLAN_LIMITS[PlanId];
 
-export async function getShopPlan(shop: string): Promise<PlanId> {
-  const settings = await prisma.shopSettings.findUnique({ where: { shop }, select: { plan: true } });
-  const plan = (settings?.plan ?? "free") as PlanId;
-  return (plan in PLAN_LIMITS ? plan : "free") as PlanId;
+interface BillingLike {
+  check(opts?: { isTest?: boolean }): Promise<{ appSubscriptions: Array<{ name: string }> }>;
+}
+
+function nameToId(name: string | null | undefined): PlanId {
+  if (name === PLAN_BUSINESS || name === PLAN_BUSINESS_ANNUAL) return "business";
+  if (name === PLAN_BASIC || name === PLAN_BASIC_ANNUAL) return "basic";
+  return "free";
+}
+
+// Reads the active Shopify subscription directly from Shopify's billing API.
+export async function getShopPlan(billing: BillingLike): Promise<PlanId> {
+  const { appSubscriptions } = await billing.check({
+    isTest: process.env.NODE_ENV !== "production",
+  });
+  return nameToId(appSubscriptions[0]?.name);
 }
 
 export async function getMonthlyImportUsage(shop: string): Promise<number> {

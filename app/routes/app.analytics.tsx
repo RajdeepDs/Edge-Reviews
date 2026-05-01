@@ -29,10 +29,10 @@ function parseDateRange(url: URL): { fromDate: Date; toDate: Date } {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session, admin, billing } = await authenticate.admin(request);
   const { shop } = session;
 
-  const shopPlan = await getShopPlan(shop);
+  const shopPlan = await getShopPlan(billing);
   if (shopPlan === "free") {
     return { plan: "free" as const, isLocked: true as const };
   }

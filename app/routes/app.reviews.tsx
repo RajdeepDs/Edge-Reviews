@@ -13,7 +13,7 @@ import { getShopPlan, getMonthlyImportUsage, PLAN_LIMITS } from "../utils/plans.
 // ── Loader ────────────────────────────────────────────────────────────────────
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session, admin, billing } = await authenticate.admin(request);
   const { shop } = session;
 
   const [reviews, productsRes, shopPlan, publishedCount, monthlyImportUsed] = await Promise.all([
@@ -32,7 +32,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         }
       }
     `),
-    getShopPlan(shop),
+    getShopPlan(billing),
     prisma.review.count({ where: { shop, status: "published" } }),
     getMonthlyImportUsage(shop),
   ]);
@@ -96,7 +96,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 // ── Action ────────────────────────────────────────────────────────────────────
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const { shop } = session;
 
   const formData = await request.formData();
@@ -144,7 +144,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (status === "published") {
       const [shopPlan, currentPublishedCount] = await Promise.all([
-        getShopPlan(shop),
+        getShopPlan(billing),
         prisma.review.count({ where: { shop, status: "published" } }),
       ]);
       const limits = PLAN_LIMITS[shopPlan];
@@ -162,7 +162,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const ids = JSON.parse(formData.get("ids") as string) as string[];
 
     const [shopPlan, currentPublishedCount] = await Promise.all([
-      getShopPlan(shop),
+      getShopPlan(billing),
       prisma.review.count({ where: { shop, status: "published" } }),
     ]);
     const limits = PLAN_LIMITS[shopPlan];
@@ -233,7 +233,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     // Enforce monthly CSV import limit
     const [shopPlan, monthlyUsed] = await Promise.all([
-      getShopPlan(shop),
+      getShopPlan(billing),
       getMonthlyImportUsage(shop),
     ]);
     const limits = PLAN_LIMITS[shopPlan];

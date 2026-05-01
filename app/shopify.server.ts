@@ -2,10 +2,19 @@ import "@shopify/shopify-app-react-router/adapters/node";
 import {
   ApiVersion,
   AppDistribution,
+  BillingInterval,
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import {
+  PLAN_BASIC,
+  PLAN_BASIC_ANNUAL,
+  PLAN_BUSINESS,
+  PLAN_BUSINESS_ANNUAL,
+} from "./plans.constants";
+
+export { PLAN_BASIC, PLAN_BASIC_ANNUAL, PLAN_BUSINESS, PLAN_BUSINESS_ANNUAL };
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -22,6 +31,20 @@ const shopify = shopifyApp({
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
+  billing: {
+    [PLAN_BASIC]: {
+      lineItems: [{ amount: 5.99, currencyCode: "USD", interval: BillingInterval.Every30Days }],
+    },
+    [PLAN_BASIC_ANNUAL]: {
+      lineItems: [{ amount: 57.48, currencyCode: "USD", interval: BillingInterval.Annual }],
+    },
+    [PLAN_BUSINESS]: {
+      lineItems: [{ amount: 13.99, currencyCode: "USD", interval: BillingInterval.Every30Days }],
+    },
+    [PLAN_BUSINESS_ANNUAL]: {
+      lineItems: [{ amount: 134.28, currencyCode: "USD", interval: BillingInterval.Annual }],
+    },
+  },
 });
 
 export default shopify;

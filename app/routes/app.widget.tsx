@@ -18,11 +18,11 @@ type WidgetType = "main" | "card";
 // ── Loader ─────────────────────────────────────────────────────────────────────
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const { shop } = session;
   const [config, shopPlan] = await Promise.all([
     prisma.widgetConfig.findUnique({ where: { shop } }),
-    getShopPlan(shop),
+    getShopPlan(billing),
   ]);
   return { config, plan: shopPlan };
 };

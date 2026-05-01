@@ -1,15 +1,51 @@
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
+import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
+import { redirect, useLoaderData, useSubmit } from "react-router";
 import { useState } from "react";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import {
+  PLAN_BASIC,
+  PLAN_BASIC_ANNUAL,
+  PLAN_BUSINESS,
+  PLAN_BUSINESS_ANNUAL,
+} from "../plans.constants";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
+const ALL_PAID_PLANS = [PLAN_BASIC, PLAN_BASIC_ANNUAL, PLAN_BUSINESS, PLAN_BUSINESS_ANNUAL] as const;
+const IS_TEST = process.env.NODE_ENV !== "production";
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
+  const { billing } = await authenticate.admin(request);
+  const { appSubscriptions } = await billing.check({ plans: [...ALL_PAID_PLANS], isTest: IS_TEST });
+  const activeSub = appSubscriptions[0] ?? null;
+  return {
+    activePlanKey: activeSub?.name ?? null,
+    subscriptionId: activeSub?.id ?? null,
+  };
 };
 
-const CURRENT_PLAN = "free";
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { billing } = await authenticate.admin(request);
+  const form = await request.formData();
+  const intent = form.get("intent") as string;
+
+  if (intent === "subscribe") {
+    const plan = form.get("plan") as typeof ALL_PAID_PLANS[number];
+    await billing.request({
+      plan,
+      isTest: IS_TEST,
+      returnUrl: `${process.env.SHOPIFY_APP_URL}/app/plans`,
+      trialDays: 7,
+    });
+  }
+
+  if (intent === "cancel") {
+    const subscriptionId = form.get("subscriptionId") as string;
+    await billing.cancel({ subscriptionId, isTest: IS_TEST, prorate: true });
+    return redirect("/app/plans");
+  }
+
+  return null;
+};
 
 type FeatureItem = { text: string; included: boolean };
 type FeatureGroup = { category: string; items: FeatureItem[] };
@@ -141,6 +177,19 @@ const PLANS: Plan[] = [
   },
 ];
 
+function getActivePlanId(activePlanKey: string | null): string {
+  if (!activePlanKey) return "free";
+  if (activePlanKey === PLAN_BASIC || activePlanKey === PLAN_BASIC_ANNUAL) return "basic";
+  if (activePlanKey === PLAN_BUSINESS || activePlanKey === PLAN_BUSINESS_ANNUAL) return "business";
+  return "free";
+}
+
+function getPlanKey(planId: string, annual: boolean): string {
+  if (planId === "basic") return annual ? PLAN_BASIC_ANNUAL : PLAN_BASIC;
+  if (planId === "business") return annual ? PLAN_BUSINESS_ANNUAL : PLAN_BUSINESS;
+  return "";
+}
+
 function Check() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
@@ -158,12 +207,29 @@ function Cross() {
 }
 
 export default function PlansPage() {
-  const shopify = useAppBridge();
+  const { activePlanKey, subscriptionId } = useLoaderData<typeof loader>();
+  const submit = useSubmit();
   const [annual, setAnnual] = useState(false);
 
+  const activePlanId = getActivePlanId(activePlanKey);
+  const isOnPaidPlan = activePlanId !== "free";
+
   const handleSelect = (plan: Plan) => {
-    if (plan.id === CURRENT_PLAN) return;
-    shopify.toast.show(`Switching to ${plan.name}…`);
+    if (plan.id === activePlanId) return;
+
+    if (plan.id === "free") {
+      // downgrade: cancel active subscription
+      submit(
+        { intent: "cancel", subscriptionId: subscriptionId ?? "" },
+        { method: "post" },
+      );
+      return;
+    }
+
+    submit(
+      { intent: "subscribe", plan: getPlanKey(plan.id, annual) },
+      { method: "post" },
+    );
   };
 
   return (
@@ -213,9 +279,18 @@ export default function PlansPage() {
         {/* Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", alignItems: "stretch" }}>
           {PLANS.map((plan) => {
-            const isCurrent = plan.id === CURRENT_PLAN;
+            const isCurrent = plan.id === activePlanId;
             const monthly = plan.monthlyPrice;
             const price = annual ? +(monthly * 0.8).toFixed(2) : monthly;
+
+            let ctaLabel: string;
+            if (isCurrent) {
+              ctaLabel = "✓ Current plan";
+            } else if (plan.id === "free" && isOnPaidPlan) {
+              ctaLabel = "Downgrade to Free";
+            } else {
+              ctaLabel = plan.cta;
+            }
 
             return (
               <div
@@ -277,7 +352,7 @@ export default function PlansPage() {
                       transition: "opacity 0.15s",
                     }}
                   >
-                    {isCurrent ? "✓ Current plan" : plan.cta}
+                    {ctaLabel}
                   </button>
                 </div>
 
