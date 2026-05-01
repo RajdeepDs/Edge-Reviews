@@ -8,7 +8,6 @@ import {
   ChoiceList,
   Badge,
   useBreakpoints,
-  Pagination,
 } from "@shopify/polaris";
 import type { IndexFiltersProps, TabProps } from "@shopify/polaris";
 import { useState, useCallback } from "react";
@@ -360,20 +359,16 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
           { title: "Date" },
           { title: "Published" },
         ]}
+        pagination={{
+          hasPrevious: safePage > 1,
+          onPrevious: () => setPage((p) => p - 1),
+          hasNext: safePage < totalPages,
+          onNext: () => setPage((p) => p + 1),
+          label: `${safePage} / ${totalPages}`,
+        }}
       >
         {rowMarkup}
       </IndexTable>
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", padding: "16px" }}>
-          <Pagination
-            hasPrevious={safePage > 1}
-            onPrevious={() => setPage((p) => p - 1)}
-            hasNext={safePage < totalPages}
-            onNext={() => setPage((p) => p + 1)}
-            label={`${safePage} / ${totalPages}`}
-          />
-        </div>
-      )}
     </LegacyCard>
 
     <EditReviewModal

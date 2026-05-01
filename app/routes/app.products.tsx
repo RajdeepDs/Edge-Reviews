@@ -144,7 +144,7 @@ export default function ProductsPage() {
   const { products } = useLoaderData<typeof loader>();
 
   return (
-    <s-page heading="Products" inlineSize="base">
+    <s-page heading="Products" inlineSize="large">
       <ProductsList products={products} />
     </s-page>
   );

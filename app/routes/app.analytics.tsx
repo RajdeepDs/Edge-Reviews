@@ -265,7 +265,7 @@ export default function AnalyticsPage() {
                         <div
                           style={{
                             width: "100%",
-                            background: "#EF9F27",
+                            background: "#6366f1",
                             borderRadius: "4px 4px 0 0",
                             height: `${(count / maxMonthlyCount) * 100}px`,
                             minHeight: "4px",
