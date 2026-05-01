@@ -24,7 +24,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { billing } = await authenticate.admin(request);
+  const { billing, session } = await authenticate.admin(request);
+  const url = new URL(request.url);
+  const host = url.searchParams.get('host') ?? '';
   const form = await request.formData();
   const intent = form.get("intent") as string;
 
@@ -33,7 +35,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     await billing.request({
       plan,
       isTest: IS_TEST,
-      returnUrl: `${process.env.SHOPIFY_APP_URL}/app/plans`,
+      returnUrl: `${process.env.SHOPIFY_APP_URL}/app/plans?shop=${session.shop}&host=${host}`,
       trialDays: 7,
     });
   }
