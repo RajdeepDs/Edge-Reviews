@@ -53,8 +53,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       cardShowName: bool("cardShowName"),
       cardShowBadge: bool("cardShowBadge"),
       cardShowProduct: bool("cardShowProduct"),
-      cardMaxChars: num("cardMaxChars"),
-      cardAccentColor: get("cardAccentColor"),
     },
     create: {
       shop,
@@ -71,9 +69,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       cardShowName: bool("cardShowName"),
       cardShowBadge: bool("cardShowBadge"),
       cardShowProduct: bool("cardShowProduct"),
-      cardMaxChars: num("cardMaxChars"),
-      cardAccentColor: get("cardAccentColor"),
-
     },
   });
 
@@ -298,7 +293,7 @@ function MainPreview({ s }: { s: { mainTitle: string; mainShowWriteButton: boole
 
 // ── Preview: Card Carousel ─────────────────────────────────────────────────────
 
-function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; cardShowName: boolean; cardShowBadge: boolean; cardShowProduct: boolean; cardMaxChars: number; cardAccentColor: string } }) {
+function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; cardShowName: boolean; cardShowBadge: boolean; cardShowProduct: boolean } }) {
   const cards = [
     { g: GRADIENTS[3], name: "Ana Smith",     r: 5, text: "Absolutely love this! Quality exceeded my expectations.", product: "Organic Face Serum" },
     { g: GRADIENTS[4], name: "Maria Green",   r: 5, text: "Great product. Fast delivery and perfect packaging.", product: "Minimalist Watch" },
@@ -316,7 +311,7 @@ function CardPreview({ s }: { s: { cardTitle: string; cardShowRating: boolean; c
               <div style={{ height: 160, background: "linear-gradient(160deg, #e5e7eb 0%, #d1d5db 100%)" }} />
               <div style={{ padding: "14px 12px 16px", textAlign: "center" }}>
                 <p style={{ fontSize: 12, color: "#6d7175", lineHeight: 1.5, margin: "0 0 8px", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {c.text.length > s.cardMaxChars ? c.text.slice(0, s.cardMaxChars).trim() + "…" : c.text}
+                  {c.text}
                 </p>
                 {s.cardShowRating && <div style={{ marginBottom: 5, display: "flex", justifyContent: "center" }}><Stars n={5} size={14} color="#f59e0b" /></div>}
                 {s.cardShowName && (
@@ -366,8 +361,6 @@ export default function WidgetPage() {
   const [cardShowName, setCardShowName] = useState(config?.cardShowName ?? true);
   const [cardShowBadge, setCardShowBadge] = useState(config?.cardShowBadge ?? true);
   const [cardShowProduct, setCardShowProduct] = useState(config?.cardShowProduct ?? true);
-  const [cardMaxChars, setCardMaxChars] = useState(config?.cardMaxChars ?? 120);
-  const [cardAccentColor, setCardAccentColor] = useState(config?.cardAccentColor ?? "#000000");
 
   const handleSave = () => {
     const fd = new FormData();
@@ -384,8 +377,6 @@ export default function WidgetPage() {
     fd.set("cardShowName", String(cardShowName));
     fd.set("cardShowBadge", String(cardShowBadge));
     fd.set("cardShowProduct", String(cardShowProduct));
-    fd.set("cardMaxChars", String(cardMaxChars));
-    fd.set("cardAccentColor", cardAccentColor);
 
     fetcher.submit(fd, { method: "post" });
     shopify.toast.show("Widget settings saved!");
@@ -554,7 +545,7 @@ export default function WidgetPage() {
                   <MainPreview s={{ mainTitle, mainShowWriteButton, mainShowBreakdown, mainShowWithPhotosFilter, mainDefaultSort, mainPageSize, mainAccentColor }} />
                 )}
                 {activeWidget === "card" && (
-                  <CardPreview s={{ cardTitle, cardShowRating, cardShowName, cardShowBadge, cardShowProduct, cardMaxChars, cardAccentColor }} />
+                  <CardPreview s={{ cardTitle, cardShowRating, cardShowName, cardShowBadge, cardShowProduct }} />
                 )}
               </div>
             </div>

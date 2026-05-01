@@ -4,9 +4,73 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+
+type AdminLike = {
+  graphql: (query: string) => Promise<{ json: () => Promise<{ data?: unknown }> }>;
+};
+
+type MerchantQueryData = {
+  shop?: {
+    name?: string;
+    email?: string;
+    primaryDomain?: { url?: string };
+    billingAddress?: { firstName?: string | null; lastName?: string | null };
+  };
+};
+
+async function syncMerchantProfile(shop: string, admin: AdminLike) {
+  const existing = await prisma.merchantProfile.findUnique({ where: { shop } });
+  if (existing?.ownerEmail && existing?.storeName) return;
+
+  const res = await admin.graphql(`#graphql
+    query {
+      shop {
+        name
+        email
+        primaryDomain { url }
+        billingAddress { firstName lastName }
+      }
+    }
+  `);
+
+  const { data } = (await res.json()) as { data?: MerchantQueryData };
+  const shopData = data?.shop;
+
+  const ownerName =
+    [shopData?.billingAddress?.firstName, shopData?.billingAddress?.lastName]
+      .filter(Boolean)
+      .join(" ") || null;
+  const ownerEmail = shopData?.email || null;
+
+  await prisma.merchantProfile.upsert({
+    where: { shop },
+    create: {
+      shop,
+      ownerName,
+      ownerEmail,
+      storeName: shopData?.name ?? null,
+      storeUrl: shopData?.primaryDomain?.url ?? `https://${shop}`,
+    },
+    update: {
+      ...(ownerName && !existing?.ownerName    ? { ownerName }                        : {}),
+      ...(ownerEmail && !existing?.ownerEmail  ? { ownerEmail }                       : {}),
+      ...(shopData?.name && !existing?.storeName
+        ? { storeName: shopData.name }
+        : {}),
+      ...(shopData?.primaryDomain?.url && !existing?.storeUrl
+        ? { storeUrl: shopData.primaryDomain.url }
+        : {}),
+    },
+  });
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
+
+  syncMerchantProfile(session.shop, admin).catch((err) => {
+    console.error("[MerchantProfile] sync failed", { shop: session.shop, err });
+  });
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
