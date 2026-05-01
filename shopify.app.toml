@@ -6,7 +6,7 @@ application_url = "https://edge-reviews.onrender.com"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = false
+automatically_update_urls_on_dev = true
 
 [app_proxy]
 url = "https://edge-reviews.onrender.com/api"
