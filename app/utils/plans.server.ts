@@ -29,7 +29,7 @@ function nameToId(name: string | null | undefined): PlanId {
 // Reads the active Shopify subscription directly from Shopify's billing API.
 export async function getShopPlan(billing: BillingLike): Promise<PlanId> {
   const { appSubscriptions } = await billing.check({
-    isTest: process.env.NODE_ENV !== "production",
+    isTest: process.env.NODE_ENV !== "production" || process.env.SHOPIFY_BILLING_TEST === "true",
   });
   return nameToId(appSubscriptions[0]?.name);
 }

@@ -11,7 +11,7 @@ import {
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
 const ALL_PAID_PLANS = [PLAN_BASIC, PLAN_BASIC_ANNUAL, PLAN_BUSINESS, PLAN_BUSINESS_ANNUAL] as const;
-const IS_TEST = process.env.NODE_ENV !== "production";
+const IS_TEST = process.env.NODE_ENV !== "production" || process.env.SHOPIFY_BILLING_TEST === "true";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
