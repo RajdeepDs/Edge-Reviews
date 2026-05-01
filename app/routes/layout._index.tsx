@@ -12,15 +12,16 @@ import { LastImportSummary } from "../components/dashboard/LastImportSummary";
 import { OfferBanner } from "app/components/offer-banner";
 import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal";
 import prisma from "../db.server";
+import { getShopPlan } from "../utils/plans.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session, admin, billing } = await authenticate.admin(request);
   const { shop } = session;
 
   const [
     totalReviews, ratingAgg, pendingCount, publishedCount,
     topProductsRaw, lastImportRaw, shopSettings,
-    productsRes,
+    productsRes, plan,
   ] = await Promise.all([
     prisma.review.count({ where: { shop } }),
     prisma.review.aggregate({ where: { shop }, _avg: { rating: true } }),
@@ -42,6 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     admin.graphql(`#graphql
       query { products(first: 250) { nodes { id title featuredImage { url } } } }
     `),
+    getShopPlan(billing),
   ]);
 
   const { data } = await productsRes.json();
@@ -84,6 +86,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return {
     shop,
+    plan,
     stats,
     topProducts,
     lastImport,
@@ -134,7 +137,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
-  const { shop, stats, topProducts, lastImport, products, setupState } =
+  const { shop, plan, stats, topProducts, lastImport, products, setupState } =
     useLoaderData<typeof loader>();
   const shopify = useAppBridge();
   const settingsFetcher = useFetcher();
@@ -182,7 +185,7 @@ export default function Index() {
       >
         Import reviews
       </s-button>
-      <OfferBanner />
+      <OfferBanner plan={plan} />
       <s-stack gap="large">
         {!setupDismissed && (
           <SetupGuideCard
