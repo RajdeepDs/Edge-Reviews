@@ -7,9 +7,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json* ./
-
-RUN npm ci --omit=dev && npm cache clean --force
+# Install dependencies (production only)
+# Supports both npm (package-lock.json) and bun (bun.lock)
+COPY package.json package-lock.json* bun.lock* ./
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev --legacy-peer-deps; else npm install --omit=dev --legacy-peer-deps; fi && npm cache clean --force
+# Remove CLI packages since we don't need them in production
+RUN npm remove @shopify/cli 2>/dev/null || true
 
 COPY . .
 
