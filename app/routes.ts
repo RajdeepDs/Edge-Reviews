@@ -17,4 +17,7 @@ export default [
   route("api/reviews", "routes/api.reviews.tsx"),
   route("webhooks/app/scopes_update", "routes/webhooks.app.scopes_update.tsx"),
   route("webhooks/app/uninstalled", "routes/webhooks.app.uninstalled.tsx"),
+  route("webhooks/customers/data_request", "routes/webhooks.customers.data_request.tsx"),
+  route("webhooks/customers/redact", "routes/webhooks.customers.redact.tsx"),
+  route("webhooks/shop/redact", "routes/webhooks.shop.redact.tsx"),
 ] satisfies RouteConfig;
