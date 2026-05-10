@@ -11,6 +11,8 @@
   --er-card: rgba(255, 255, 255, 0.96);
   --er-shadow: 0 1px 1px rgba(15, 23, 42, 0.06), 0 8px 28px rgba(15, 23, 42, 0.08);
 
+  display: block;
+  width: fit-content;
   color: var(--er-text);
 }
 
@@ -36,7 +38,7 @@
 .er-widget--main {
   margin: 0;
   max-width: none;
-  width: 100%;
+  width: max-content;
   padding: 28px 16px;
 }
 
@@ -681,6 +683,13 @@
   text-align: center;
 }
 
+.er-empty__icon {
+  font-size: 1.5rem;
+  color: #f59e0b;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
 .er-empty__title {
   font-weight: 750;
   color: var(--er-text);
@@ -690,6 +699,50 @@
   margin-top: 6px;
   font-size: 12px;
   color: var(--er-muted);
+  margin-bottom: 1rem;
+}
+
+
+.er-no-reviews {
+  margin: 0;
+  padding: 24px 0;
+  font-size: 14px;
+  color: var(--er-muted, #64748b);
+  font-style: italic;
+}
+
+/* Star badge — compact inline widget for product information sections */
+.er-widget--badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: 0.95rem;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+}
+
+.er-widget--badge .er-stars {
+  font-size: 14px;
+}
+
+.er-badge__avg {
+  font-weight: 700;
+  color: var(--er-text, #0f172a);
+}
+
+.er-badge__count {
+  color: var(--er-muted, #64748b);
+  font-size: 0.875em;
+}
+
+.er-badge__label {
+  color: var(--er-muted, #64748b);
+  font-size: 0.85em;
+}
+
+.er-widget--badge-empty .er-badge__empty {
+  font-size: 0.85rem;
+  color: var(--er-muted, #64748b);
 }
 
 /* Modal */

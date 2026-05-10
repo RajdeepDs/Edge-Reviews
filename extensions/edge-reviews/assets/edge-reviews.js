@@ -88,6 +88,113 @@
     }, 3200);
   }
 
+  function buildModalHtml(opts) {
+    return `
+      <div class="er-modal" hidden data-er-modal>
+        <div class="er-modal__backdrop" data-er-close tabindex="-1"></div>
+        <div class="er-modal__dialog" role="dialog" aria-modal="true" aria-label="Write a review">
+          <div class="er-modal__head">
+            <div class="er-modal__title">Write a review</div>
+            <button type="button" class="er-iconbtn" data-er-close aria-label="Close">×</button>
+          </div>
+          <form class="er-form" data-er-form>
+            <div class="er-form__row">
+              <label class="er-field">
+                <span class="er-field__label">Name</span>
+                <input name="customerName" type="text" autocomplete="name" required />
+              </label>
+              <label class="er-field">
+                <span class="er-field__label">Email (optional)</span>
+                <input name="customerEmail" type="email" autocomplete="email" />
+              </label>
+            </div>
+            <label class="er-field">
+              <span class="er-field__label">Rating</span>
+              <select name="rating" required>
+                <option value="">Select</option>
+                <option value="5">★★★★★</option>
+                <option value="4">★★★★</option>
+                <option value="3">★★★</option>
+                <option value="2">★★</option>
+                <option value="1">★</option>
+              </select>
+            </label>
+            <label class="er-field">
+              <span class="er-field__label">Title (optional)</span>
+              <input name="title" type="text" />
+            </label>
+            <label class="er-field">
+              <span class="er-field__label">Review</span>
+              <textarea name="body" rows="4" required></textarea>
+            </label>
+            <div class="er-form__actions">
+              <button type="button" class="er-btn er-btn--ghost" data-er-close>Cancel</button>
+              <button type="submit" class="er-btn er-btn--primary" data-er-submit-btn>Submit review</button>
+            </div>
+            <input type="hidden" name="shopifyProductId" value="${escapeHtml(opts.productId || "")}" />
+            <input type="hidden" name="productTitle" value="${escapeHtml(opts.productTitle || "")}" />
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  function attachModal(root, opts) {
+    const elModal = qs(root, "[data-er-modal]");
+    const btnOpen = qs(root, "[data-er-open]");
+    const closeEls = qsa(root, "[data-er-close]");
+    const elForm = qs(root, "[data-er-form]");
+    const submitBtn = qs(root, "[data-er-submit-btn]");
+
+    let lastFocus = null;
+    function openModal() {
+      if (!elModal) return;
+      lastFocus = document.activeElement;
+      elModal.hidden = false;
+      document.documentElement.classList.add("er-modalOpen");
+      const firstInput = qs(elModal, "input,select,textarea,button");
+      firstInput?.focus?.();
+    }
+
+    function closeModal() {
+      if (!elModal) return;
+      elModal.hidden = true;
+      document.documentElement.classList.remove("er-modalOpen");
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    btnOpen?.addEventListener("click", openModal);
+    closeEls.forEach((el) => el.addEventListener("click", closeModal));
+    elModal?.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    elForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!opts.submitUrl) return;
+
+      const fd = new FormData(elForm);
+      submitBtn?.setAttribute("disabled", "disabled");
+      submitBtn?.classList.add("is-loading");
+
+      try {
+        const res = await fetch(opts.submitUrl, { method: "POST", body: fd });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.success) {
+          throw new Error(json?.error || "Submission failed");
+        }
+        makeToast(root, "Review submitted. Thank you!");
+        elForm.reset();
+        closeModal();
+      } catch (err) {
+        makeToast(root, err?.message || "Could not submit review", "error");
+      } finally {
+        submitBtn?.removeAttribute("disabled");
+        submitBtn?.classList.remove("is-loading");
+      }
+    });
+  }
+
   function buildMainWidget(root, data, opts) {
     const { config, reviews, stats } = data;
 
@@ -172,52 +279,7 @@
           <button type="button" class="er-btn er-btn--ghost" data-er-more>Show more</button>
         </div>
 
-        <div class="er-modal" hidden data-er-modal>
-          <div class="er-modal__backdrop" data-er-close tabindex="-1"></div>
-          <div class="er-modal__dialog" role="dialog" aria-modal="true" aria-label="Write a review">
-            <div class="er-modal__head">
-              <div class="er-modal__title">Write a review</div>
-              <button type="button" class="er-iconbtn" data-er-close aria-label="Close">×</button>
-            </div>
-            <form class="er-form" data-er-form>
-              <div class="er-form__row">
-                <label class="er-field">
-                  <span class="er-field__label">Name</span>
-                  <input name="customerName" type="text" autocomplete="name" required />
-                </label>
-                <label class="er-field">
-                  <span class="er-field__label">Email (optional)</span>
-                  <input name="customerEmail" type="email" autocomplete="email" />
-                </label>
-              </div>
-              <label class="er-field">
-                <span class="er-field__label">Rating</span>
-                <select name="rating" required>
-                  <option value="">Select</option>
-                  <option value="5">★★★★★</option>
-                  <option value="4">★★★★</option>
-                  <option value="3">★★★</option>
-                  <option value="2">★★</option>
-                  <option value="1">★</option>
-                </select>
-              </label>
-              <label class="er-field">
-                <span class="er-field__label">Title (optional)</span>
-                <input name="title" type="text" />
-              </label>
-              <label class="er-field">
-                <span class="er-field__label">Review</span>
-                <textarea name="body" rows="4" required></textarea>
-              </label>
-              <div class="er-form__actions">
-                <button type="button" class="er-btn er-btn--ghost" data-er-close>Cancel</button>
-                <button type="submit" class="er-btn er-btn--primary" data-er-submit-btn>Submit review</button>
-              </div>
-              <input type="hidden" name="shopifyProductId" value="${escapeHtml(opts.productId || "")}" />
-              <input type="hidden" name="productTitle" value="${escapeHtml(opts.productTitle || "")}" />
-            </form>
-          </div>
-        </div>
+        ${buildModalHtml(opts)}
       </div>
     `;
 
@@ -326,62 +388,46 @@
 
     elMore?.addEventListener("click", showMore);
 
-    // Modal
-    const elModal = qs(root, "[data-er-modal]");
-    const btnOpen = qs(root, "[data-er-open]");
-    const closeEls = qsa(root, "[data-er-close]");
-    const elForm = qs(root, "[data-er-form]");
-    const submitBtn = qs(root, "[data-er-submit-btn]");
-
-    let lastFocus = null;
-    function openModal() {
-      if (!elModal) return;
-      lastFocus = document.activeElement;
-      elModal.hidden = false;
-      document.documentElement.classList.add("er-modalOpen");
-      const firstInput = qs(elModal, "input,select,textarea,button");
-      firstInput?.focus?.();
-    }
-
-    function closeModal() {
-      if (!elModal) return;
-      elModal.hidden = true;
-      document.documentElement.classList.remove("er-modalOpen");
-      if (lastFocus && lastFocus.focus) lastFocus.focus();
-    }
-
-    btnOpen?.addEventListener("click", openModal);
-    closeEls.forEach((el) => el.addEventListener("click", closeModal));
-    elModal?.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
-    });
-
-    elForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!opts.submitUrl) return;
-
-      const fd = new FormData(elForm);
-      submitBtn?.setAttribute("disabled", "disabled");
-      submitBtn?.classList.add("is-loading");
-
-      try {
-        const res = await fetch(opts.submitUrl, { method: "POST", body: fd });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || !json?.success) {
-          throw new Error(json?.error || "Submission failed");
-        }
-        makeToast(root, "Review submitted. Thank you!");
-        elForm.reset();
-        closeModal();
-      } catch (err) {
-        makeToast(root, err?.message || "Could not submit review", "error");
-      } finally {
-        submitBtn?.removeAttribute("disabled");
-        submitBtn?.classList.remove("is-loading");
-      }
-    });
+    attachModal(root, opts);
 
     sync();
+  }
+
+  function buildEmptyState(root, opts) {
+    root.innerHTML = `
+      <div class="er-widget er-widget--main">
+        <div class="er-live" aria-live="polite" aria-atomic="true"></div>
+        <div class="er-empty">
+          <div class="er-empty__icon" aria-hidden="true">★★★★★</div>
+          <div class="er-empty__title">No reviews yet</div>
+          <div class="er-empty__sub">Be the first to share your experience with this product.</div>
+          <button type="button" class="er-btn er-btn--primary" data-er-open>Write a review</button>
+        </div>
+        ${buildModalHtml(opts)}
+      </div>
+    `;
+    attachModal(root, opts);
+  }
+
+  function buildStarBadge(root, data) {
+    if (!data || !data.stats?.total) {
+      root.innerHTML = `<div class="er-widget er-widget--badge er-widget--badge-empty"><span class="er-badge__empty">No reviews yet</span></div>`;
+      return;
+    }
+
+    const avg = parseFloat(data.stats?.avg || "0").toFixed(1);
+    const total = data.stats?.total ?? 0;
+    const rounded = Math.round(parseFloat(avg));
+
+    root.innerHTML = `
+      <div class="er-widget er-widget--badge">
+        ${renderStars(rounded)}
+        <span class="er-badge__avg">${escapeHtml(avg)}</span>
+        <span class="er-badge__count">(${escapeHtml(String(total))})</span>
+        ${SVG_VERIFIED}
+        <span class="er-badge__label">Verified</span>
+      </div>
+    `;
   }
 
   function truncate(s, max) {
@@ -526,13 +572,22 @@
       const data = await res.json();
       if (!res.ok || data?.error) throw new Error(data?.error || "Failed to load reviews");
 
-      // No reviews for this product — remove the widget from the page entirely.
       if (!data.stats?.total) {
-        root.style.display = "none";
+        if (widget === "main") {
+          buildEmptyState(root, { submitUrl, productId, productTitle });
+        } else if (widget === "card") {
+          root.innerHTML = `<div class="er-widget er-widget--card"><p class="er-no-reviews">No reviews yet</p></div>`;
+        } else if (widget === "star-badge") {
+          buildStarBadge(root, null);
+        } else {
+          root.style.display = "none";
+        }
         return;
       }
 
-      if (widget === "card") {
+      if (widget === "star-badge") {
+        buildStarBadge(root, data);
+      } else if (widget === "card") {
         buildCardCarousel(root, data, { cardsPerView });
       } else {
         buildMainWidget(root, data, { submitUrl, productId, productTitle });
@@ -550,7 +605,7 @@
   }
 
   function boot() {
-    const roots = qsa(document, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card']");
+    const roots = qsa(document, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card'], .er-root[data-er-widget='star-badge']");
     if (roots.length === 0) return;
 
     const io =
@@ -579,11 +634,10 @@
 
   // Re-initialize when the theme editor re-renders a section after a setting change
   document.addEventListener("shopify:section:load", (event) => {
-    const roots = qsa(event.target, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card']");
+    const roots = qsa(event.target, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card'], .er-root[data-er-widget='star-badge']");
     roots.forEach(initRoot);
   });
 
   window.EdgeReviews = window.EdgeReviews || {};
   window.EdgeReviews[NS] = { boot };
 })();
-

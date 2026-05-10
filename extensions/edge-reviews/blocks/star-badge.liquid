@@ -1,0 +1,54 @@
+{%- comment -%}
+  Edge Reviews — Star badge
+  Compact inline widget showing stars + average rating + verified badge.
+  Designed for the product information section only.
+{%- endcomment -%}
+
+{%- assign er_shop = shop.permanent_domain | default: shop.domain -%}
+{%- assign er_shop_param = er_shop | url_encode -%}
+{%- assign er_endpoint = '/apps/edge-reviews/widget?shop=' | append: er_shop_param -%}
+
+{%- assign er_product_id = '' -%}
+{%- if product -%}
+  {%- assign er_product_id = product.id -%}
+{%- endif -%}
+
+<script>
+  (function () {
+    if (window.__edgeReviewsAssetsLoaded) return;
+    window.__edgeReviewsAssetsLoaded = true;
+
+    var cssHref = {{ 'edge-reviews.css' | asset_url | json }};
+    var jsSrc = {{ 'edge-reviews.js' | asset_url | json }};
+
+    if (!document.querySelector('link[href="' + cssHref + '"]')) {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = cssHref;
+      document.head.appendChild(link);
+    }
+
+    if (!document.querySelector('script[src="' + jsSrc + '"]')) {
+      var s = document.createElement('script');
+      s.src = jsSrc;
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+  })();
+</script>
+
+<section
+  class="er-root"
+  data-er-widget="star-badge"
+  data-er-shop="{{ er_shop }}"
+  data-er-endpoint="{{ er_endpoint }}"
+  data-er-product-id="{{ er_product_id }}"
+></section>
+
+{% schema %}
+{
+  "name": "t:blocks.star_badge.name",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}

@@ -34,6 +34,9 @@
         "show_badge": "Show verified badge"
       }
     },
+    "star_badge": {
+      "name": "Edge Reviews — Star badge"
+    },
     "app_embed": {
       "name": "Edge Reviews — App embed"
     }
