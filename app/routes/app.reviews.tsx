@@ -6,6 +6,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { ReviewsTable } from "app/components/reviews/reviews-table";
 import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal";
 import { ExportReviewsModal } from "app/components/reviews/export-reviews-modal";
+import { SampleReviewsModal } from "app/components/reviews/sample-reviews-modal";
 import prisma from "../db.server";
 import { uploadReviewImage } from "../utils/cloudinary.server";
 import { getShopPlan, getMonthlyImportUsage, PLAN_LIMITS } from "../utils/plans.server";
@@ -304,6 +305,7 @@ export default function ReviewsPage() {
   const { reviews, pendingCount, products, plan, limits, publishedCount } = useLoaderData<typeof loader>();
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [sampleOpen, setSampleOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [limitBannerDismissed, setLimitBannerDismissed] = useState(false);
 
@@ -320,6 +322,12 @@ export default function ReviewsPage() {
         onClick={() => setImportOpen(true)}
       >
         Import reviews
+      </s-button>
+      <s-button
+        slot="secondary-actions"
+        onClick={() => setSampleOpen(true)}
+      >
+        Load sample reviews
       </s-button>
       {plan === "business" && (
         <s-button
@@ -377,6 +385,12 @@ export default function ReviewsPage() {
       <ImportReviewsModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
+        products={products}
+      />
+
+      <SampleReviewsModal
+        open={sampleOpen}
+        onClose={() => setSampleOpen(false)}
         products={products}
       />
 

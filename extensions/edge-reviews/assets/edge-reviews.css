@@ -12,7 +12,7 @@
   --er-shadow: 0 1px 1px rgba(15, 23, 42, 0.06), 0 8px 28px rgba(15, 23, 42, 0.08);
 
   display: block;
-  width: fit-content;
+  width: 100%;
   color: var(--er-text);
 }
 
@@ -38,7 +38,7 @@
 .er-widget--main {
   margin: 0;
   max-width: none;
-  width: max-content;
+  width: 100%;
   padding: 28px 16px;
 }
 
