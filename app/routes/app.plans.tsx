@@ -20,13 +20,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     activePlanKey: activeSub?.name ?? null,
     subscriptionId: activeSub?.id ?? null,
+    chargeConfirmed: new URL(request.url).searchParams.has("charge_id"),
   };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { billing, session } = await authenticate.admin(request);
   const url = new URL(request.url);
-  const host = url.searchParams.get('host') ?? '';
+  // Build a guaranteed-valid host: prefer the one Shopify passed, fall back to
+  // constructing it from the shop domain (base64url of "<shop>/admin").
+  const rawHost = url.searchParams.get('host');
+  const host = rawHost ?? Buffer.from(`${session.shop}/admin`).toString('base64url');
   const form = await request.formData();
   const intent = form.get("intent") as string;
 
@@ -209,7 +213,7 @@ function Cross() {
 }
 
 export default function PlansPage() {
-  const { activePlanKey, subscriptionId } = useLoaderData<typeof loader>();
+  const { activePlanKey, subscriptionId, chargeConfirmed } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const [annual, setAnnual] = useState(false);
 
@@ -237,6 +241,16 @@ export default function PlansPage() {
   return (
     <s-page heading="Plans & Pricing" inlineSize="large">
       <div style={{ maxWidth: "960px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "28px" }}>
+
+        {chargeConfirmed && (
+          <div style={{
+            padding: "12px 16px", borderRadius: "8px",
+            background: "#f0fdf4", border: "1px solid #bbf7d0",
+            color: "#15803d", fontSize: "14px", fontWeight: 500,
+          }}>
+            Your subscription has been activated. Thank you!
+          </div>
+        )}
 
         {/* Billing toggle */}
         <div style={{ display: "flex", justifyContent: "center" }}>
