@@ -35,7 +35,7 @@
     if (!document.querySelector('script[src="' + jsSrc + '"]')) {
       var s = document.createElement('script');
       s.src = jsSrc;
-      s.defer = true;
+      s.async = true;
       document.head.appendChild(s);
     }
   })();
