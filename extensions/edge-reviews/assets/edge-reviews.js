@@ -563,10 +563,10 @@
     try {
       // Scope reviews to the current product. Liquid's product.id is numeric;
       // construct the full GID to match how shopifyProductId is stored in the DB.
+      const productGid = productId ? "gid://shopify/Product/" + productId : "";
       let fetchUrl = endpoint;
-      if (productId) {
-        const gid = "gid://shopify/Product/" + productId;
-        fetchUrl = endpoint + (endpoint.includes("?") ? "&" : "?") + "product_id=" + encodeURIComponent(gid);
+      if (productGid) {
+        fetchUrl = endpoint + (endpoint.includes("?") ? "&" : "?") + "product_id=" + encodeURIComponent(productGid);
       }
       const res = await fetch(fetchUrl, { method: "GET", headers: { Accept: "application/json" } });
       const data = await res.json();
@@ -574,7 +574,7 @@
 
       if (!data.stats?.total) {
         if (widget === "main") {
-          buildEmptyState(root, { submitUrl, productId, productTitle });
+          buildEmptyState(root, { submitUrl, productId: productGid, productTitle });
         } else if (widget === "card") {
           root.innerHTML = `<div class="er-widget er-widget--card"><p class="er-no-reviews">No reviews yet</p></div>`;
         } else if (widget === "star-badge") {
@@ -590,7 +590,7 @@
       } else if (widget === "card") {
         buildCardCarousel(root, data, { cardsPerView });
       } else {
-        buildMainWidget(root, data, { submitUrl, productId, productTitle });
+        buildMainWidget(root, data, { submitUrl, productId: productGid, productTitle });
       }
     } catch (err) {
       root.innerHTML = `

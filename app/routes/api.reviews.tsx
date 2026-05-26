@@ -38,10 +38,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const settings = await prisma.shopSettings.findUnique({ where: { shop } });
   const status = settings?.autoPublish ? "published" : "pending";
 
+  const rawProductId = (fd.get("shopifyProductId") as string) || "";
+  const shopifyProductId = rawProductId
+    ? rawProductId.startsWith("gid://") ? rawProductId : `gid://shopify/Product/${rawProductId}`
+    : null;
+
   await prisma.review.create({
     data: {
       shop,
-      shopifyProductId: (fd.get("shopifyProductId") as string) || null,
+      shopifyProductId,
       productTitle: (fd.get("productTitle") as string) || "",
       customerName,
       customerEmail: (fd.get("customerEmail") as string) || null,
