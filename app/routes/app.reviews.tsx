@@ -285,11 +285,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       ]);
     }
 
+    const totalFailed = failed + rowsSkippedDueToLimit;
+
     return {
       ok: true,
       intent,
       succeeded: valid.length,
-      failed,
+      failed: totalFailed,
       total: rawRows.length,
       importId: importRecord.id,
       rowsSkippedDueToLimit: rowsSkippedDueToLimit > 0 ? rowsSkippedDueToLimit : undefined,

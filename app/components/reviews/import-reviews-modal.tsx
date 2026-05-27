@@ -203,6 +203,7 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
     failed?: number;
     total?: number;
     importId?: string;
+    rowsSkippedDueToLimit?: number;
     error?: string;
   }>();
 
@@ -556,7 +557,8 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
           >
             <p>
               {(result.succeeded ?? 0).toLocaleString()} of {(result.total ?? 0).toLocaleString()} rows imported successfully.
-              {(result.failed ?? 0) > 0 && ` ${result.failed!.toLocaleString()} rows were skipped due to missing or invalid data.`}
+              {(result.failed ?? 0) > 0 && ` ${result.failed!.toLocaleString()} rows were skipped.`}
+              {(result.rowsSkippedDueToLimit ?? 0) > 0 && ` ${result.rowsSkippedDueToLimit!.toLocaleString()} rows were skipped because your monthly CSV import limit was reached.`}
             </p>
           </Banner>
 
