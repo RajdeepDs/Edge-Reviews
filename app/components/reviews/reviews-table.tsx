@@ -27,6 +27,7 @@ export type ReviewRow = {
   text: string;
   product: string;
   date: string;
+  createdAt: string;
   status: "published" | "pending" | "rejected";
   importId: string | null;
   imageUrl: string | null;
@@ -61,6 +62,8 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
 
   // Seed tab from ?status= URL param
   const statusParam = searchParams.get("status");
+  const ratingParam = searchParams.get("rating");
+  const sourceParam = searchParams.get("source");
   const initialTab =
     statusParam === "published" ? 1
     : statusParam === "pending"   ? 2
@@ -69,7 +72,9 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
 
   const [selected, setSelected] = useState(initialTab);
   const [queryValue, setQueryValue] = useState("");
-  const [ratingFilter, setRatingFilter] = useState<string[] | undefined>(undefined);
+  const [ratingFilter, setRatingFilter] = useState<string[] | undefined>(
+    ratingParam && ["1", "2", "3", "4", "5"].includes(ratingParam) ? [ratingParam] : undefined,
+  );
   const [photoFilter, setPhotoFilter] = useState<string[] | undefined>(undefined);
   const [productFilter, setProductFilter] = useState<string[] | undefined>(undefined);
   const [sortSelected, setSortSelected] = useState(["date desc"]);
@@ -210,7 +215,11 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
 
   const tabStatus = STATUS_KEYS[selected];
   const filtered = reviews
-    .filter((r) => tabStatus === "all" || r.status === tabStatus)
+    .filter((r) => {
+      const effectiveStatus = localStatuses[r.id] ?? r.status;
+      return tabStatus === "all" || effectiveStatus === tabStatus;
+    })
+    .filter((r) => !sourceParam || r.importId === sourceParam)
     .filter((r) => {
       if (!queryValue) return true;
       const q = queryValue.toLowerCase();
@@ -224,7 +233,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
       const m = dir === "asc" ? 1 : -1;
       if (field === "customer") return m * a.customer.localeCompare(b.customer);
       if (field === "rating")   return m * (a.rating - b.rating);
-      if (field === "date")     return m * (new Date(a.date).getTime() - new Date(b.date).getTime());
+      if (field === "date")     return m * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       return 0;
     });
 

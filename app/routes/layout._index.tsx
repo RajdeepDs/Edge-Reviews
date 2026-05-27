@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { SetupGuideCard } from "../components/SetupGuideCard";
@@ -139,7 +138,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function Index() {
   const { shop, plan, stats, topProducts, lastImport, products, setupState } =
     useLoaderData<typeof loader>();
-  const shopify = useAppBridge();
   const settingsFetcher = useFetcher();
 
   const [setupDismissed, setSetupDismissed] = useState(false);
@@ -149,6 +147,7 @@ export default function Index() {
     setupState.confirmedWorking,
   );
   const [importOpen, setImportOpen] = useState(false);
+  const setupCompleted = embedActivated && reviewsImported && reviewConfirmedWorking;
 
   const handleOpenThemeSettings = () => {
     window.open(
@@ -172,10 +171,6 @@ export default function Index() {
     settingsFetcher.submit({ intent: "mark-confirmed-working" }, { method: "post" });
   };
 
-  const handleCustomizeWidget = () => {
-    shopify.toast.show("Customize Widget — coming soon!");
-  };
-
   return (
     <s-page heading="Edge Reviews">
       <s-button
@@ -187,7 +182,7 @@ export default function Index() {
       </s-button>
       <OfferBanner plan={plan} />
       <s-stack gap="large">
-        {!setupDismissed && (
+        {!setupCompleted && !setupDismissed && (
           <SetupGuideCard
             embedActivated={embedActivated}
             reviewsImported={reviewsImported}

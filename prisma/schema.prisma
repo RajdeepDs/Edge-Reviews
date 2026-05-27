@@ -120,3 +120,23 @@ model MerchantProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model ReviewSettings {
+  shop                     String   @id
+  importAutoPublish        Boolean  @default(true)
+  importDuplicateDetection Boolean  @default(true)
+  importSourceLabel        String   @default("CSV Import")
+  importMinRating          String   @default("1")
+  autoPublish              Boolean  @default(false)
+  minAutoPublishRating     String   @default("4")
+  flagProfanity            Boolean  @default(true)
+  requireVerifiedPurchase  Boolean  @default(true)
+  minReviewLength          String   @default("10")
+  autoRejectOneStar        Boolean  @default(false)
+  showStarRating           Boolean  @default(true)
+  showReviewCount          Boolean  @default(true)
+  showVerifiedBadge        Boolean  @default(true)
+  showReviewerAvatar       Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}

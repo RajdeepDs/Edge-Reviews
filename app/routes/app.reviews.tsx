@@ -75,6 +75,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         day: "numeric",
         year: "numeric",
       }),
+      createdAt: r.createdAt.toISOString(),
       status: r.status as "published" | "pending" | "rejected",
       importId: r.importId,
       imageUrl: r.imageUrl ?? null,
@@ -122,8 +123,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       imageUrlUpdate = { imageUrl: await uploadReviewImage(imageFile) };
     }
 
-    await prisma.review.update({
-      where: { id },
+    const result = await prisma.review.updateMany({
+      where: { id, shop },
       data: {
         customerName,
         customerEmail,
@@ -134,6 +135,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         ...imageUrlUpdate,
       },
     });
+
+    if (result.count === 0) {
+      return { ok: false, intent, error: "Review not found" };
+    }
 
     return { ok: true, intent };
   }
@@ -154,7 +159,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    await prisma.review.update({ where: { id }, data: { status } });
+    const result = await prisma.review.updateMany({
+      where: { id, shop },
+      data: { status },
+    });
+    if (result.count === 0) {
+      return { ok: false, intent, error: "Review not found" };
+    }
     return { ok: true, intent };
   }
 

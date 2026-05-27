@@ -179,7 +179,6 @@ export default function AnalyticsPage() {
   const hasReviewData = totalReviewsAllTime > 0;
   const hasImportHistory = importHistory.length > 0;
 
-  const maxRatingCount = Math.max(...ratingDistribution.map((r) => r.count), 1);
   const maxMonthlyCount = Math.max(...monthlyReviews.map((m) => m.count), 1);
   const totalRatings = ratingDistribution.reduce((s, r) => s + r.count, 0);
 
@@ -295,7 +294,7 @@ export default function AnalyticsPage() {
                         <div style={{ flex: 1, height: "8px", background: "#f3f4f6", borderRadius: "4px", overflow: "hidden" }}>
                           <div
                             style={{
-                              width: `${totalRatings > 0 ? (count / maxRatingCount) * 100 : 0}%`,
+                              width: `${totalRatings > 0 ? (count / totalRatings) * 100 : 0}%`,
                               height: "100%",
                               background: color,
                               borderRadius: "4px",

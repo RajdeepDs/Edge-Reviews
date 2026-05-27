@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useFetcher } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
@@ -35,7 +35,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const fd = await request.formData();
   const get = (k: string) => fd.get(k) as string;
   const bool = (k: string) => fd.get(k) === "true";
-  const num = (k: string) => parseInt(fd.get(k) as string, 10);
+  const num = (k: string, fallback: number) => {
+    const n = parseInt(fd.get(k) as string, 10);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const mainPageSize = Math.min(48, Math.max(8, num("mainPageSize", 20)));
 
   await prisma.widgetConfig.upsert({
     where: { shop },
@@ -45,7 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       mainShowBreakdown: bool("mainShowBreakdown"),
       mainShowWithPhotosFilter: bool("mainShowWithPhotosFilter"),
       mainDefaultSort: get("mainDefaultSort"),
-      mainPageSize: num("mainPageSize"),
+      mainPageSize,
       mainAccentColor: get("mainAccentColor"),
 
       cardTitle: get("cardTitle"),
@@ -61,7 +65,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       mainShowBreakdown: bool("mainShowBreakdown"),
       mainShowWithPhotosFilter: bool("mainShowWithPhotosFilter"),
       mainDefaultSort: get("mainDefaultSort"),
-      mainPageSize: num("mainPageSize"),
+      mainPageSize,
       mainAccentColor: get("mainAccentColor"),
 
       cardTitle: get("cardTitle"),
@@ -379,10 +383,16 @@ export default function WidgetPage() {
     fd.set("cardShowProduct", String(cardShowProduct));
 
     fetcher.submit(fd, { method: "post" });
-    shopify.toast.show("Widget settings saved!");
   };
 
   const isSaving = fetcher.state !== "idle";
+  useEffect(() => {
+    if (fetcher.state !== "idle") return;
+    const data = fetcher.data as { ok?: boolean; error?: string } | undefined;
+    if (!data) return;
+    if (data.ok) shopify.toast.show("Widget settings saved!");
+    else shopify.toast.show(data.error || "Could not save widget settings.", { isError: true });
+  }, [fetcher.state, fetcher.data, shopify]);
 
   if (plan === "free") {
     return (

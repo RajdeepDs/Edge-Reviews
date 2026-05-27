@@ -1,13 +1,175 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
+import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import prisma from "../db.server";
+
+type ReviewSettingsState = {
+  importAutoPublish: boolean;
+  importDuplicateDetection: boolean;
+  importSourceLabel: string;
+  importMinRating: string;
+  autoPublish: boolean;
+  minAutoPublishRating: string;
+  flagProfanity: boolean;
+  requireVerifiedPurchase: boolean;
+  minReviewLength: string;
+  autoRejectOneStar: boolean;
+  showStarRating: boolean;
+  showReviewCount: boolean;
+  showVerifiedBadge: boolean;
+  showReviewerAvatar: boolean;
+};
+
+const DEFAULT_SETTINGS: ReviewSettingsState = {
+  importAutoPublish: true,
+  importDuplicateDetection: true,
+  importSourceLabel: "CSV Import",
+  importMinRating: "1",
+  autoPublish: false,
+  minAutoPublishRating: "4",
+  flagProfanity: true,
+  requireVerifiedPurchase: true,
+  minReviewLength: "10",
+  autoRejectOneStar: false,
+  showStarRating: true,
+  showReviewCount: true,
+  showVerifiedBadge: true,
+  showReviewerAvatar: true,
+};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
+  const { session } = await authenticate.admin(request);
+  let settings: ReviewSettingsState | null = null;
+  try {
+    const rows = await prisma.$queryRaw<Array<ReviewSettingsState>>`
+      SELECT
+        "importAutoPublish",
+        "importDuplicateDetection",
+        "importSourceLabel",
+        "importMinRating",
+        "autoPublish",
+        "minAutoPublishRating",
+        "flagProfanity",
+        "requireVerifiedPurchase",
+        "minReviewLength",
+        "autoRejectOneStar",
+        "showStarRating",
+        "showReviewCount",
+        "showVerifiedBadge",
+        "showReviewerAvatar"
+      FROM "ReviewSettings"
+      WHERE "shop" = ${session.shop}
+      LIMIT 1
+    `;
+    settings = rows[0] ?? null;
+  } catch {
+    settings = null;
+  }
+  return {
+    settings: { ...DEFAULT_SETTINGS, ...(settings ?? {}) },
+  };
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const form = await request.formData();
+
+  const getString = (k: string, fallback: string) => {
+    const v = form.get(k);
+    return typeof v === "string" ? v : fallback;
+  };
+  const getBool = (k: string, fallback: boolean) => {
+    const v = form.get(k);
+    if (v === null) return fallback;
+    return v === "true";
+  };
+
+  const data: ReviewSettingsState = {
+    importAutoPublish: getBool("importAutoPublish", true),
+    importDuplicateDetection: getBool("importDuplicateDetection", true),
+    importSourceLabel: getString("importSourceLabel", "CSV Import").trim() || "CSV Import",
+    importMinRating: getString("importMinRating", "1"),
+    autoPublish: getBool("autoPublish", false),
+    minAutoPublishRating: getString("minAutoPublishRating", "4"),
+    flagProfanity: getBool("flagProfanity", true),
+    requireVerifiedPurchase: getBool("requireVerifiedPurchase", true),
+    minReviewLength: getString("minReviewLength", "10"),
+    autoRejectOneStar: getBool("autoRejectOneStar", false),
+    showStarRating: getBool("showStarRating", true),
+    showReviewCount: getBool("showReviewCount", true),
+    showVerifiedBadge: getBool("showVerifiedBadge", true),
+    showReviewerAvatar: getBool("showReviewerAvatar", true),
+  };
+
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "ReviewSettings" (
+        "shop",
+        "importAutoPublish",
+        "importDuplicateDetection",
+        "importSourceLabel",
+        "importMinRating",
+        "autoPublish",
+        "minAutoPublishRating",
+        "flagProfanity",
+        "requireVerifiedPurchase",
+        "minReviewLength",
+        "autoRejectOneStar",
+        "showStarRating",
+        "showReviewCount",
+        "showVerifiedBadge",
+        "showReviewerAvatar",
+        "updatedAt"
+      ) VALUES (
+        ${session.shop},
+        ${data.importAutoPublish},
+        ${data.importDuplicateDetection},
+        ${data.importSourceLabel},
+        ${data.importMinRating},
+        ${data.autoPublish},
+        ${data.minAutoPublishRating},
+        ${data.flagProfanity},
+        ${data.requireVerifiedPurchase},
+        ${data.minReviewLength},
+        ${data.autoRejectOneStar},
+        ${data.showStarRating},
+        ${data.showReviewCount},
+        ${data.showVerifiedBadge},
+        ${data.showReviewerAvatar},
+        NOW()
+      )
+      ON CONFLICT ("shop") DO UPDATE SET
+        "importAutoPublish" = EXCLUDED."importAutoPublish",
+        "importDuplicateDetection" = EXCLUDED."importDuplicateDetection",
+        "importSourceLabel" = EXCLUDED."importSourceLabel",
+        "importMinRating" = EXCLUDED."importMinRating",
+        "autoPublish" = EXCLUDED."autoPublish",
+        "minAutoPublishRating" = EXCLUDED."minAutoPublishRating",
+        "flagProfanity" = EXCLUDED."flagProfanity",
+        "requireVerifiedPurchase" = EXCLUDED."requireVerifiedPurchase",
+        "minReviewLength" = EXCLUDED."minReviewLength",
+        "autoRejectOneStar" = EXCLUDED."autoRejectOneStar",
+        "showStarRating" = EXCLUDED."showStarRating",
+        "showReviewCount" = EXCLUDED."showReviewCount",
+        "showVerifiedBadge" = EXCLUDED."showVerifiedBadge",
+        "showReviewerAvatar" = EXCLUDED."showReviewerAvatar",
+        "updatedAt" = NOW()
+    `;
+  } catch {
+    return { ok: false, error: "settings_table_missing" };
+  }
+
+  await prisma.shopSettings.upsert({
+    where: { shop: session.shop },
+    update: { autoPublish: data.autoPublish },
+    create: { shop: session.shop, autoPublish: data.autoPublish },
+  });
+
+  return { ok: true };
 };
 
 function SettingToggleRow({
@@ -34,34 +196,35 @@ function SettingToggleRow({
 
 export default function SettingsPage() {
   const shopify = useAppBridge();
+  const { settings: initialSettings } = useLoaderData<typeof loader>();
+  const fetcher = useFetcher<{ ok?: boolean }>();
 
-  const [settings, setSettings] = useState({
-    importAutoPublish: true,
-    importDuplicateDetection: true,
-    importSourceLabel: "CSV Import",
-    importMinRating: "1",
+  const [settings, setSettings] = useState(initialSettings);
 
-    autoPublish: false,
-    minAutoPublishRating: "4",
-    flagProfanity: true,
-    requireVerifiedPurchase: true,
-    minReviewLength: "10",
-    autoRejectOneStar: false,
-
-    showStarRating: true,
-    showReviewCount: true,
-    showVerifiedBadge: true,
-    showReviewerAvatar: true,
-  });
-
-  const save = () => shopify.toast.show("Settings saved!");
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data?.ok) {
+      shopify.toast.show("Settings saved!");
+    }
+    if (fetcher.state === "idle" && fetcher.data && !fetcher.data.ok) {
+      shopify.toast.show("Could not save settings. Run latest DB migration.", {
+        isError: true,
+      });
+    }
+  }, [fetcher.state, fetcher.data, shopify]);
 
   const update = (key: keyof typeof settings, value: string | boolean) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
 
+  const persist = (next: typeof settings) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(next)) fd.set(k, String(v));
+    fetcher.submit(fd, { method: "post" });
+  };
+
   const updateAndSave = (key: keyof typeof settings, value: string | boolean) => {
-    update(key, value);
-    save();
+    const next = { ...settings, [key]: value };
+    setSettings(next);
+    persist(next);
   };
 
   return (
@@ -122,7 +285,7 @@ export default function SettingsPage() {
               </s-text>
               <div
                 onInput={(e: FormEvent<HTMLDivElement>) => update("importSourceLabel", (e.target as HTMLInputElement).value)}
-                onBlur={save}
+                onBlur={() => persist(settings)}
               >
                 <s-text-field
                   value={settings.importSourceLabel}
@@ -198,7 +361,7 @@ export default function SettingsPage() {
               </s-text>
               <div
                 onInput={(e: FormEvent<HTMLDivElement>) => update("minReviewLength", (e.target as HTMLInputElement).value)}
-                onBlur={save}
+                onBlur={() => persist(settings)}
               >
                 <s-text-field
                   value={settings.minReviewLength}
