@@ -608,31 +608,10 @@
     const roots = qsa(document, ".er-root[data-er-widget='main'], .er-root[data-er-widget='card'], .er-root[data-er-widget='star-badge']");
     if (roots.length === 0) return;
 
-    if (!("IntersectionObserver" in window)) {
-      roots.forEach(initRoot);
-      return;
-    }
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            io.unobserve(e.target);
-            initRoot(e.target);
-          }
-        }
-      },
-      { rootMargin: "200px 0px", threshold: 0 }
-    );
-
-    roots.forEach((r) => {
-      // Ensure the element has at least 1px height so IntersectionObserver
-      // fires correctly in Safari/Firefox, which skip 0-area elements.
-      if (r.getBoundingClientRect().height === 0) {
-        r.style.minHeight = "1px";
-      }
-      io.observe(r);
-    });
+    // Initialize immediately for reliability across all themes/editors.
+    // Some storefront/theme-editor layouts never trigger IntersectionObserver
+    // for app blocks, which leaves widgets permanently empty.
+    roots.forEach(initRoot);
   }
 
   if (document.readyState === "loading") {
