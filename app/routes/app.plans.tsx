@@ -26,20 +26,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { billing, session } = await authenticate.admin(request);
-  const url = new URL(request.url);
-  // Build a guaranteed-valid host: prefer the one Shopify passed, fall back to
-  // constructing it from the shop domain (base64url of "<shop>/admin").
-  const rawHost = url.searchParams.get('host');
-  const host = rawHost ?? Buffer.from(`${session.shop}/admin`).toString('base64url');
   const form = await request.formData();
   const intent = form.get("intent") as string;
 
   if (intent === "subscribe") {
     const plan = form.get("plan") as typeof ALL_PAID_PLANS[number];
+    const storeName = session.shop.replace('.myshopify.com', '');
     await billing.request({
       plan,
       isTest: IS_TEST,
-      returnUrl: `${process.env.SHOPIFY_APP_URL}/app/plans?shop=${session.shop}&host=${host}`,
+      returnUrl: `https://admin.shopify.com/store/${storeName}/apps/edge-reviews/app/plans`,
       trialDays: 7,
     });
   }

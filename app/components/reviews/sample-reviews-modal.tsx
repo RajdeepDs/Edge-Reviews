@@ -35,6 +35,8 @@ export function SampleReviewsModal({ open, onClose, products }: Props) {
     succeeded?: number;
     failed?: number;
     total?: number;
+    published?: number;
+    pending?: number;
     error?: string;
   }>();
 
@@ -74,7 +76,7 @@ export function SampleReviewsModal({ open, onClose, products }: Props) {
     <BlockStack gap="400">
       <Banner tone="info">
         <p>
-          This loads <strong>{SAMPLE_REVIEWS.length} realistic sample reviews</strong> for the selected product so you can preview widgets immediately. All reviews are added as <strong>pending</strong> — publish them to see them on your storefront.
+          This loads <strong>{SAMPLE_REVIEWS.length} realistic sample reviews</strong> for the selected product so you can preview widgets immediately. Reviews follow your import publishing settings.
         </p>
       </Banner>
       <TextField
@@ -144,13 +146,15 @@ export function SampleReviewsModal({ open, onClose, products }: Props) {
         <BlockStack gap="500">
           <Banner title="Sample reviews loaded!" tone="success">
             <p>
-              {result.succeeded ?? 0} sample reviews have been added as pending for <strong>{selectedProduct?.title}</strong>. Publish them from the table below to make them visible on your storefront.
+              {result.succeeded ?? 0} sample reviews have been added for <strong>{selectedProduct?.title}</strong>.
+              {(result.published ?? 0) > 0 && ` ${(result.published ?? 0).toLocaleString()} published automatically.`}
+              {(result.pending ?? 0) > 0 && ` ${(result.pending ?? 0).toLocaleString()} remain pending.`}
             </p>
           </Banner>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
             {[
               { label: "Total added", value: result.succeeded ?? 0, color: "#2d7a3f" },
-              { label: "Status",      value: "Pending",              color: "#6d7175" },
+              { label: "Published",   value: result.published ?? 0,  color: "#2d7a3f" },
               { label: "Skipped",     value: result.failed ?? 0,     color: (result.failed ?? 0) > 0 ? "#b52b27" : "#6d7175" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ textAlign: "center", padding: "20px 16px", background: "#f6f6f7", borderRadius: 10 }}>

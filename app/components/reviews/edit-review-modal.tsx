@@ -21,6 +21,7 @@ export function EditReviewModal({ review, onClose }: Props) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
+  const submittedReviewIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (review) {
@@ -36,11 +37,28 @@ export function EditReviewModal({ review, onClose }: Props) {
     }
   }, [review]);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
+
+  const prevFetcherState = useRef(fetcher.state);
   useEffect(() => {
-    if (fetcher.state === "idle" && (fetcher.data as { ok?: boolean; intent?: string } | undefined)?.ok && (fetcher.data as { ok?: boolean; intent?: string } | undefined)?.intent === "edit-review") {
-      onClose();
+    const wasSubmitting = prevFetcherState.current !== "idle";
+    prevFetcherState.current = fetcher.state;
+    const data = fetcher.data as { ok?: boolean; intent?: string; id?: string } | undefined;
+    const submittedReviewId = submittedReviewIdRef.current;
+    if (!wasSubmitting || fetcher.state !== "idle" || data?.intent !== "edit-review") {
+      return;
     }
-  }, [fetcher.state, fetcher.data, onClose]);
+
+    if (data?.ok && submittedReviewId && data.id === submittedReviewId) {
+      submittedReviewIdRef.current = null;
+      onCloseRef.current();
+    }
+    if (data && !data.ok) {
+      submittedReviewIdRef.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state, fetcher.data]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,6 +88,7 @@ export function EditReviewModal({ review, onClose }: Props) {
     fd.set("body", body);
     fd.set("removeImage", String(removeImage));
     if (imageFile) fd.set("image", imageFile);
+    submittedReviewIdRef.current = review.id;
     fetcher.submit(fd, { method: "post", action: "/app/reviews", encType: "multipart/form-data" });
   }, [review, customerName, customerEmail, rating, status, title, body, imageFile, removeImage, fetcher]);
 

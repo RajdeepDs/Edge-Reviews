@@ -203,6 +203,8 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
     failed?: number;
     total?: number;
     importId?: string;
+    published?: number;
+    pending?: number;
     rowsSkippedDueToLimit?: number;
     error?: string;
   }>();
@@ -577,7 +579,10 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
 
           {(result.succeeded ?? 0) > 0 && (
             <Text as="p" variant="bodySm" tone="subdued">
-              Imported reviews are pending approval. Publish them from the Reviews page to make them visible on your storefront.
+              {(result.published ?? 0) > 0
+                ? `${(result.published ?? 0).toLocaleString()} imported review${(result.published ?? 0) === 1 ? "" : "s"} published automatically.`
+                : "Imported reviews are pending approval."}
+              {(result.pending ?? 0) > 0 && ` ${(result.pending ?? 0).toLocaleString()} review${(result.pending ?? 0) === 1 ? "" : "s"} remain pending due to your import settings or published review limit.`}
             </Text>
           )}
         </BlockStack>

@@ -163,7 +163,7 @@
 .er-cardC {
   scroll-snap-align: start;
   border: 1px solid rgba(15, 23, 42, 0.09);
-  border-radius: 20px;
+  border-radius: 8px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.96);
   min-width: 0;
@@ -551,7 +551,7 @@
 
 .er-card {
   border: 1px solid rgba(15, 23, 42, 0.09);
-  border-radius: 20px;
+  border-radius: 8px;
   background: var(--er-card);
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07), 0 0 0 0.5px rgba(15, 23, 42, 0.04);
@@ -941,4 +941,3 @@
     animation: none !important;
   }
 }
-

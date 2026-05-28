@@ -140,7 +140,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { ok: false, intent, error: "Review not found" };
     }
 
-    return { ok: true, intent };
+    return { ok: true, intent, id };
   }
 
   // ── Toggle single review status ──────────────────────────────────────────────
@@ -244,9 +244,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     // Enforce monthly CSV import limit
-    const [shopPlan, monthlyUsed] = await Promise.all([
+    const [shopPlan, monthlyUsed, currentPublishedCount, reviewSettings] = await Promise.all([
       getShopPlan(billing),
       getMonthlyImportUsage(shop),
+      prisma.review.count({ where: { shop, status: "published" } }),
+      prisma.reviewSettings.findUnique({
+        where: { shop },
+        select: { importAutoPublish: true, importMinRating: true },
+      }),
     ]);
     const limits = PLAN_LIMITS[shopPlan];
     let rowsSkippedDueToLimit = 0;
@@ -267,26 +272,44 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
 
+    let publishedOnImport = 0;
+
     if (valid.length > 0) {
+      const autoPublishImported = reviewSettings?.importAutoPublish ?? true;
+      const minAutoPublishRating = Number(reviewSettings?.importMinRating ?? "1") || 1;
+      const publishSlots = limits.publishedReviews === Infinity
+        ? valid.length
+        : Math.max(0, limits.publishedReviews - currentPublishedCount);
+
       await Promise.all([
         prisma.review.createMany({
-          data: valid.map((row) => ({
-            shop,
-            shopifyProductId: productId || null,
-            productTitle,
-            customerName: row.customerName.trim(),
-            customerEmail: row.customerEmail?.trim() || null,
-            rating: Number(row.rating),
-            title: row.title?.trim() || null,
-            body: row.body.trim(),
-            imageUrl: row.imageUrl?.trim() || null,
-            status: "pending",
-            source: "csv_import",
-            importId: importRecord.id,
-            ...(row.date && !isNaN(new Date(row.date).getTime())
-              ? { createdAt: new Date(row.date) }
-              : {}),
-          })),
+          data: valid.map((row) => {
+            const shouldPublish =
+              autoPublishImported &&
+              Number(row.rating) >= minAutoPublishRating &&
+              publishedOnImport < publishSlots;
+            if (shouldPublish) {
+              publishedOnImport++;
+            }
+
+            return {
+              shop,
+              shopifyProductId: productId || null,
+              productTitle,
+              customerName: row.customerName.trim(),
+              customerEmail: row.customerEmail?.trim() || null,
+              rating: Number(row.rating),
+              title: row.title?.trim() || null,
+              body: row.body.trim(),
+              imageUrl: row.imageUrl?.trim() || null,
+              status: shouldPublish ? "published" : "pending",
+              source: "csv_import",
+              importId: importRecord.id,
+              ...(row.date && !isNaN(new Date(row.date).getTime())
+                ? { createdAt: new Date(row.date) }
+                : {}),
+            };
+          }),
         }),
         prisma.shopSettings.upsert({
           where: { shop },
@@ -305,6 +328,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       failed: totalFailed,
       total: rawRows.length,
       importId: importRecord.id,
+      published: publishedOnImport,
+      pending: valid.length - publishedOnImport,
       rowsSkippedDueToLimit: rowsSkippedDueToLimit > 0 ? rowsSkippedDueToLimit : undefined,
     };
   }
