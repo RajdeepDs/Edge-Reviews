@@ -40,6 +40,9 @@ interface Props {
   open: boolean;
   onClose: () => void;
   products: ImportProduct[];
+  plan?: string;
+  monthlyImportLimit?: number | null;
+  monthlyImportUsed?: number;
 }
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
@@ -194,7 +197,7 @@ function FieldRow({
 
 const EMPTY_MAPPING: Mapping = { customerName: "", rating: "", title: "", body: "", customerEmail: "", date: "", imageUrl: "" };
 
-export function ImportReviewsModal({ open, onClose, products }: Props) {
+export function ImportReviewsModal({ open, onClose, products, plan, monthlyImportLimit, monthlyImportUsed = 0 }: Props) {
   const navigate = useNavigate();
   const fetcher = useFetcher<{
     ok: boolean;
@@ -531,14 +534,42 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
       <FieldRow label="Review Image"   description="URL of an image attached to the review"  options={colOptional} value={mapping.imageUrl}      onChange={setField("imageUrl")}      sample={sampleFor(mapping.imageUrl)} />
 
       {/* Row estimate */}
-      {csvData && (
-        <div style={{ padding: "10px 14px", background: "#f6f6f7", borderRadius: 8, marginTop: 4 }}>
-          <Text as="p" variant="bodySm" tone="subdued">
-            <strong>{csvData.rows.filter((r) => r.some((c) => c.trim())).length.toLocaleString()}</strong> rows will be processed.
-            Rows with missing or invalid required fields will be skipped.
-          </Text>
-        </div>
-      )}
+      {csvData && (() => {
+        const rowCount = csvData.rows.filter((r) => r.some((c) => c.trim())).length;
+        const remaining = monthlyImportLimit !== null && monthlyImportLimit !== undefined
+          ? Math.max(0, monthlyImportLimit - monthlyImportUsed)
+          : null;
+        const willSkip = remaining !== null && rowCount > remaining ? rowCount - remaining : 0;
+        return (
+          <BlockStack gap="300">
+            <div style={{ padding: "10px 14px", background: "#f6f6f7", borderRadius: 8, marginTop: 4 }}>
+              <Text as="p" variant="bodySm" tone="subdued">
+                <strong>{rowCount.toLocaleString()}</strong> rows will be processed.
+                Rows with missing or invalid required fields will be skipped.
+              </Text>
+            </div>
+            {willSkip > 0 && (
+              <Banner
+                title={`${willSkip.toLocaleString()} row${willSkip === 1 ? "" : "s"} will be skipped — monthly import limit`}
+                tone="warning"
+                action={{
+                  content: "Upgrade plan",
+                  onAction: () => {
+                    handleClose();
+                    navigate("/app/plans");
+                  },
+                }}
+              >
+                <p>
+                  Your {plan ? `${plan} ` : ""}plan allows {monthlyImportLimit!.toLocaleString()} CSV row{monthlyImportLimit === 1 ? "" : "s"} per month
+                  ({monthlyImportUsed.toLocaleString()} used, {remaining!.toLocaleString()} remaining).
+                  Upgrade to import all {rowCount.toLocaleString()} rows.
+                </p>
+              </Banner>
+            )}
+          </BlockStack>
+        );
+      })()}
     </BlockStack>
   );
 
@@ -556,11 +587,22 @@ export function ImportReviewsModal({ open, onClose, products }: Props) {
           <Banner
             title={result.failed === 0 ? "Import complete!" : result.succeeded === 0 ? "Import failed" : "Import partially complete"}
             tone={result.failed === 0 ? "success" : result.succeeded === 0 ? "critical" : "warning"}
+            action={
+              (result.rowsSkippedDueToLimit ?? 0) > 0
+                ? {
+                    content: "Upgrade plan",
+                    onAction: () => {
+                      handleClose();
+                      navigate("/app/plans");
+                    },
+                  }
+                : undefined
+            }
           >
             <p>
               {(result.succeeded ?? 0).toLocaleString()} of {(result.total ?? 0).toLocaleString()} rows imported successfully.
               {(result.failed ?? 0) > 0 && ` ${result.failed!.toLocaleString()} rows were skipped.`}
-              {(result.rowsSkippedDueToLimit ?? 0) > 0 && ` ${result.rowsSkippedDueToLimit!.toLocaleString()} rows were skipped because your monthly CSV import limit was reached.`}
+              {(result.rowsSkippedDueToLimit ?? 0) > 0 && ` ${result.rowsSkippedDueToLimit!.toLocaleString()} rows were skipped because your monthly CSV import limit was reached. Upgrade to import more reviews this month.`}
             </p>
           </Banner>
 

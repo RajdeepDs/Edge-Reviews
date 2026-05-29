@@ -340,7 +340,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReviewsPage() {
-  const { reviews, pendingCount, products, plan, limits, publishedCount } = useLoaderData<typeof loader>();
+  const { reviews, pendingCount, products, plan, limits, publishedCount, monthlyImportUsed } = useLoaderData<typeof loader>();
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [sampleOpen, setSampleOpen] = useState(false);
@@ -422,6 +422,9 @@ export default function ReviewsPage() {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         products={products}
+        plan={plan}
+        monthlyImportLimit={limits.csvRowsPerMonth}
+        monthlyImportUsed={monthlyImportUsed}
       />
 
       <SampleReviewsModal
