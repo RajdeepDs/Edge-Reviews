@@ -367,15 +367,13 @@ export default function ReviewsPage() {
       >
         Load sample reviews
       </s-button>
-      {plan === "business" && (
-        <s-button
-          slot="secondary-actions"
-          icon="export"
-          onClick={() => setExportOpen(true)}
-        >
-          Export reviews
-        </s-button>
-      )}
+      <s-button
+        slot="secondary-actions"
+        icon="export"
+        onClick={() => setExportOpen(true)}
+      >
+        Export reviews
+      </s-button>
 
       {nearLimit && !limitBannerDismissed && (
         <s-banner
@@ -432,14 +430,12 @@ export default function ReviewsPage() {
         products={products}
       />
 
-      {plan === "business" && (
-        <ExportReviewsModal
-          open={exportOpen}
-          onClose={() => setExportOpen(false)}
-          reviews={reviews}
-          products={products}
-        />
-      )}
+      <ExportReviewsModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        reviews={reviews}
+        products={products}
+      />
     </s-page>
   );
 }

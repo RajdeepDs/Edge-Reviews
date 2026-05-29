@@ -36,7 +36,7 @@ function csvEscape(val: string | number | null | undefined): string {
 }
 
 function buildCSV(rows: ReviewRow[]): string {
-  const headers = ["Customer Name", "Customer Email", "Rating", "Title", "Review", "Product", "Status", "Date"];
+  const headers = ["Customer Name", "Customer Email", "Rating", "Title", "Review", "Product", "Status", "Date", "Image URL"];
   const lines = rows.map((r) =>
     [
       csvEscape(r.customer),
@@ -47,6 +47,7 @@ function buildCSV(rows: ReviewRow[]): string {
       csvEscape(r.product),
       r.status,
       csvEscape(r.date),
+      csvEscape(r.imageUrl),
     ].join(","),
   );
   return [headers.join(","), ...lines].join("\n");
@@ -119,7 +120,7 @@ function StepIndicator({ current }: { current: number }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-const CSV_COLUMNS = ["Customer Name", "Customer Email", "Rating", "Title", "Review", "Product", "Status", "Date"];
+const CSV_COLUMNS = ["Customer Name", "Customer Email", "Rating", "Title", "Review", "Product", "Status", "Date", "Image URL"];
 
 export function ExportReviewsModal({ open, onClose, reviews, products }: Props) {
   const [step, setStep] = useState<Step>(1);
