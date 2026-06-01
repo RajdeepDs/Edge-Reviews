@@ -56,6 +56,7 @@
 
   function sortReviews(reviews, sort) {
     const copy = reviews.slice();
+    const imgFirst = (a, b) => (b.imageUrl ? 1 : 0) - (a.imageUrl ? 1 : 0);
     if (sort === "highest") {
       copy.sort((a, b) => (b.rating - a.rating) || (new Date(b.createdAt) - new Date(a.createdAt)));
       return copy;
@@ -64,7 +65,7 @@
       copy.sort((a, b) => (a.rating - b.rating) || (new Date(b.createdAt) - new Date(a.createdAt)));
       return copy;
     }
-    copy.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    copy.sort((a, b) => imgFirst(a, b) || (new Date(b.createdAt) - new Date(a.createdAt)));
     return copy;
   }
 
