@@ -8,8 +8,34 @@ import { ImportReviewsModal } from "app/components/reviews/import-reviews-modal"
 import { ExportReviewsModal } from "app/components/reviews/export-reviews-modal";
 import { SampleReviewsModal } from "app/components/reviews/sample-reviews-modal";
 import prisma from "../db.server";
-import { uploadReviewImage } from "../utils/cloudinary.server";
+import { uploadReviewImage, uploadReviewImageFromUrl, CLOUDINARY_URL_PREFIX } from "../utils/cloudinary.server";
 import { getShopPlan, getMonthlyImportUsage, PLAN_LIMITS } from "../utils/plans.server";
+
+// ── Background image migration ────────────────────────────────────────────────
+
+async function runConcurrent<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
+  let i = 0;
+  const worker = async () => { while (i < items.length) await fn(items[i++]); };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}
+
+async function migrateImportImages(importId: string, shop: string) {
+  const reviews = await prisma.review.findMany({
+    where: { importId, shop, imageUrl: { not: null } },
+    select: { id: true, imageUrl: true },
+  });
+
+  const toMigrate = reviews.filter(
+    (r) => r.imageUrl && !r.imageUrl.startsWith(CLOUDINARY_URL_PREFIX)
+  );
+
+  await runConcurrent(toMigrate, 5, async ({ id, imageUrl }) => {
+    const cloudinaryUrl = await uploadReviewImageFromUrl(imageUrl!);
+    if (cloudinaryUrl) {
+      await prisma.review.update({ where: { id }, data: { imageUrl: cloudinaryUrl } });
+    }
+  });
+}
 
 // ── Loader ────────────────────────────────────────────────────────────────────
 
@@ -317,6 +343,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           create: { shop, reviewsImported: true },
         }),
       ]);
+
+      // Kick off image migration to Cloudinary without blocking the response
+      migrateImportImages(importRecord.id, shop).catch(() => {});
     }
 
     const totalFailed = failed + rowsSkippedDueToLimit;
