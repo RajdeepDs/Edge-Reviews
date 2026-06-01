@@ -436,7 +436,7 @@
 .er-break__fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--er-accent) 75%, #000000) 0%, var(--er-accent) 100%);
+  background: var(--er-accent);
 }
 
 .er-break__pct {
