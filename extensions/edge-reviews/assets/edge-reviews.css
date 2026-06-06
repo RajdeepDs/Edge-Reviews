@@ -435,10 +435,9 @@
 
 .er-break__fill {
   height: 100%;
-  width: 100%;
-  transform: scaleX(0);
-  transform-origin: left center;
+  width: 0%;
   background: var(--er-accent);
+  transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .er-break__pct {

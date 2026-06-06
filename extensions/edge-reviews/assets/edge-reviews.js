@@ -244,7 +244,7 @@
                         <span class="er-break__label">${star}</span>
                         <span class="er-break__stars" aria-hidden="true">${SVG_STAR_FILLED}</span>
                         <div class="er-break__bar" role="img" aria-label="${star} stars: ${row.count} reviews (${row.pct}%)">
-                          <div class="er-break__fill" style="transform:scaleX(${(clamp(row.pct || 0, 0, 100) / 100).toFixed(3)})"></div>
+                          <div class="er-break__fill" style="width:${clamp(row.pct || 0, 0, 100)}%"></div>
                         </div>
                         <span class="er-break__pct">${clamp(row.pct || 0, 0, 100)}%</span>
                       </div>`;
