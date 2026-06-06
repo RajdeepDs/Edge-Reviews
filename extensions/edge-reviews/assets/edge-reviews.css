@@ -280,25 +280,19 @@
 .er-verified {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.10);
-  color: rgba(22, 101, 52, 1);
+  background: rgba(29, 155, 240, 0.10);
+  color: #0c66a0;
   font-weight: 600;
   font-size: 12px;
 }
 
-.er-verified__mark {
-  display: inline-grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: rgba(34, 197, 94, 0.18);
-  color: rgba(22, 101, 52, 1);
-  font-size: 12px;
-  line-height: 1;
+.er-verified svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .er-head {
@@ -610,15 +604,23 @@
   font-weight: 750;
   font-size: 14px;
   color: var(--er-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
+.er-person__name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
+.er-card__rating {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 
 .er-card__rating .er-star {
   font-size: 16px;

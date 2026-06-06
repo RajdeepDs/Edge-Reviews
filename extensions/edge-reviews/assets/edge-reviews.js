@@ -223,7 +223,7 @@
                 ${renderStars(Math.round(parseFloat(stats?.avg || "0") || 0))}
                 <span class="er-avg__count">(${escapeHtml(stats?.total ?? 0)})</span>
               </div>
-              <span class="er-verified"><span class="er-verified__mark">✓</span> Verified</span>
+              <span class="er-verified">${SVG_VERIFIED} Verified</span>
             </div>
           </div>
           ${
@@ -332,7 +332,7 @@
                     <div class="er-person">
                       ${avatar}
                       <div class="er-person__meta">
-                        <div class="er-person__name">${escapeHtml(name)} ${SVG_VERIFIED}</div>
+                        <div class="er-person__name"><span class="er-person__name-text">${escapeHtml(name)}</span>${SVG_VERIFIED}</div>
                       </div>
                     </div>
                     <div class="er-card__rating">${renderStars(r.rating)}</div>
@@ -468,7 +468,7 @@
               ${showRating ? `<span class="er-avg__num">${escapeHtml(stats?.avg ?? "0.0")}</span>` : ""}
               ${showRating ? renderStars(Math.round(parseFloat(stats?.avg || "0") || 0)) : ""}
               <span class="er-avg__count">(${escapeHtml(stats?.total ?? 0)})</span>
-              <span class="er-verified"><span class="er-verified__mark">✓</span> Verified</span>
+              <span class="er-verified">${SVG_VERIFIED} Verified</span>
             </div>
           </div>
         </header>
