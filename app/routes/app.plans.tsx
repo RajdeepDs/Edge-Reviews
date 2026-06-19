@@ -11,11 +11,18 @@ import {
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
 const ALL_PAID_PLANS = [PLAN_BASIC, PLAN_BASIC_ANNUAL, PLAN_BUSINESS, PLAN_BUSINESS_ANNUAL] as const;
+
+// Controls whether billing.request attempts a real charge. In production real merchants
+// are charged for real; in dev (and on test/demo stores) Shopify forces a test charge.
 const IS_TEST = process.env.NODE_ENV !== "production" || process.env.SHOPIFY_BILLING_TEST === "true";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
-  const { appSubscriptions } = await billing.check({ plans: [...ALL_PAID_PLANS], isTest: IS_TEST });
+  // Always check with isTest:true so the lookup returns BOTH live and test subscriptions.
+  // Development/demo stores (including the ones Shopify's reviewers use) can't be charged,
+  // so their subscriptions are always test charges — checking with isTest:false would hide
+  // them and this page would keep showing "Free" as the current plan after an upgrade.
+  const { appSubscriptions } = await billing.check({ plans: [...ALL_PAID_PLANS], isTest: true });
   const activeSub = appSubscriptions[0] ?? null;
   return {
     activePlanKey: activeSub?.name ?? null,
@@ -347,6 +354,15 @@ export default function PlansPage() {
                   {annual && price > 0 && (
                     <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#9ca3af" }}>
                       Billed ${(price * 12).toFixed(2)}/year
+                    </p>
+                  )}
+                  {price === 0 ? (
+                    <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#9ca3af", fontWeight: 500 }}>
+                      Free forever — no credit card required
+                    </p>
+                  ) : (
+                    <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>
+                      7-day free trial, then ${price}/mo{annual ? " (billed annually)" : ""}
                     </p>
                   )}
 
