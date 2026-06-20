@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useSubmit } from "react-router";
+import { redirect, useLoaderData, useNavigation, useSubmit } from "react-router";
 import { useState } from "react";
 import { authenticate } from "../shopify.server";
 import {
@@ -26,7 +26,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const activeSub = appSubscriptions[0] ?? null;
   return {
     activePlanKey: activeSub?.name ?? null,
-    subscriptionId: activeSub?.id ?? null,
     chargeConfirmed: new URL(request.url).searchParams.has("charge_id"),
   };
 };
@@ -36,24 +35,42 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const form = await request.formData();
   const intent = form.get("intent") as string;
 
+  // Read the merchant's current subscription from Shopify (the source of truth) instead of
+  // trusting values posted by the client, which can be stale or tampered with.
+  const { appSubscriptions } = await billing.check({ plans: [...ALL_PAID_PLANS], isTest: true });
+  const activeSub = appSubscriptions[0] ?? null;
+
   if (intent === "subscribe") {
-    const plan = form.get("plan") as typeof ALL_PAID_PLANS[number];
-    const storeName = session.shop.replace('.myshopify.com', '');
+    const plan = form.get("plan");
+    // Ignore anything that isn't one of our configured paid plans, or a request to
+    // "subscribe" to the plan/interval the merchant is already on.
+    if (typeof plan !== "string" || !(ALL_PAID_PLANS as readonly string[]).includes(plan)) {
+      return redirect("/app/plans");
+    }
+    if (activeSub?.name === plan) {
+      return redirect("/app/plans");
+    }
+    const storeName = session.shop.replace(".myshopify.com", "");
     await billing.request({
-      plan,
+      plan: plan as typeof ALL_PAID_PLANS[number],
       isTest: IS_TEST,
       returnUrl: `https://admin.shopify.com/store/${storeName}/apps/edge-reviews/app/plans`,
-      trialDays: 7,
+      // Only first-time subscribers (coming from Free) get the 7-day trial. Switching
+      // intervals or tiers while already on a paid plan must not reset the trial each time.
+      trialDays: activeSub ? 0 : 7,
     });
   }
 
   if (intent === "cancel") {
-    const subscriptionId = form.get("subscriptionId") as string;
-    await billing.cancel({ subscriptionId, isTest: IS_TEST, prorate: true });
+    // Cancel the merchant's actual active subscription; no-op if there isn't one so a
+    // stray/duplicate request can't error out.
+    if (activeSub) {
+      await billing.cancel({ subscriptionId: activeSub.id, isTest: IS_TEST, prorate: true });
+    }
     return redirect("/app/plans");
   }
 
-  return null;
+  return redirect("/app/plans");
 };
 
 type FeatureItem = { text: string; included: boolean };
@@ -199,6 +216,9 @@ function getPlanKey(planId: string, annual: boolean): string {
   return "";
 }
 
+// Tier ordering, used to label a paid→paid move as an upgrade vs a downgrade.
+const PLAN_RANK: Record<string, number> = { free: 0, basic: 1, business: 2 };
+
 function Check() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
@@ -216,22 +236,38 @@ function Cross() {
 }
 
 export default function PlansPage() {
-  const { activePlanKey, subscriptionId, chargeConfirmed } = useLoaderData<typeof loader>();
+  const { activePlanKey, chargeConfirmed } = useLoaderData<typeof loader>();
   const submit = useSubmit();
-  const [annual, setAnnual] = useState(false);
+  const navigation = useNavigation();
 
   const activePlanId = getActivePlanId(activePlanKey);
+  const activeIsAnnual =
+    activePlanKey === PLAN_BASIC_ANNUAL || activePlanKey === PLAN_BUSINESS_ANNUAL;
   const isOnPaidPlan = activePlanId !== "free";
 
+  // Open the billing toggle on the interval the merchant is already on, so an existing
+  // subscriber's plan reads as "current" on load instead of as a switch.
+  const [annual, setAnnual] = useState(activeIsAnnual);
+
+  // Disable the buttons while a subscribe/cancel is in flight so a double-click can't fire
+  // two billing requests, and surface which card is being processed.
+  const isSubmitting = navigation.state !== "idle";
+  const pendingIntent = navigation.formData?.get("intent");
+  const pendingPlan = navigation.formData?.get("plan");
+
+  // A card is the "current plan" only when BOTH the tier and the billing interval match
+  // the active subscription. Comparing tier alone marks a monthly subscriber's plan as
+  // current under the annual toggle too, which blocks the monthly→annual upgrade on the
+  // same tier. (Free has no interval, so the interval check is skipped for it.)
+  const isCurrentPlan = (plan: Plan) =>
+    plan.id === activePlanId && (plan.id === "free" || annual === activeIsAnnual);
+
   const handleSelect = (plan: Plan) => {
-    if (plan.id === activePlanId) return;
+    if (isCurrentPlan(plan) || isSubmitting) return;
 
     if (plan.id === "free") {
-      // downgrade: cancel active subscription
-      submit(
-        { intent: "cancel", subscriptionId: subscriptionId ?? "" },
-        { method: "post" },
-      );
+      // downgrade: cancel the active subscription (resolved server-side)
+      submit({ intent: "cancel" }, { method: "post" });
       return;
     }
 
@@ -245,7 +281,7 @@ export default function PlansPage() {
     <s-page heading="Plans & Pricing" inlineSize="large">
       <div style={{ maxWidth: "960px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "28px" }}>
 
-        {chargeConfirmed && (
+        {chargeConfirmed && isOnPaidPlan && (
           <div style={{
             padding: "12px 16px", borderRadius: "8px",
             background: "#f0fdf4", border: "1px solid #bbf7d0",
@@ -298,15 +334,35 @@ export default function PlansPage() {
         {/* Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", alignItems: "stretch" }}>
           {PLANS.map((plan) => {
-            const isCurrent = plan.id === activePlanId;
+            const isCurrent = isCurrentPlan(plan);
+            // Same paid tier as the active plan, but the toggle is on the other interval.
+            const isIntervalSwitch =
+              plan.id !== "free" && plan.id === activePlanId && !isCurrent;
             const monthly = plan.monthlyPrice;
             const price = annual ? +(monthly * 0.8).toFixed(2) : monthly;
 
+            // Is the form currently submitting *this* card's action?
+            const isPending =
+              isSubmitting &&
+              (plan.id === "free"
+                ? pendingIntent === "cancel"
+                : pendingIntent === "subscribe" && pendingPlan === getPlanKey(plan.id, annual));
+
             let ctaLabel: string;
-            if (isCurrent) {
+            if (isPending) {
+              ctaLabel = "Processing…";
+            } else if (isCurrent) {
               ctaLabel = "✓ Current plan";
-            } else if (plan.id === "free" && isOnPaidPlan) {
-              ctaLabel = "Downgrade to Free";
+            } else if (isIntervalSwitch) {
+              ctaLabel = annual ? "Switch to annual billing" : "Switch to monthly billing";
+            } else if (plan.id === "free") {
+              ctaLabel = isOnPaidPlan ? "Downgrade to Free" : plan.cta;
+            } else if (isOnPaidPlan) {
+              // Moving between paid tiers (e.g. Basic → Business).
+              ctaLabel =
+                PLAN_RANK[plan.id] > PLAN_RANK[activePlanId]
+                  ? `Upgrade to ${plan.name}`
+                  : `Downgrade to ${plan.name}`;
             } else {
               ctaLabel = plan.cta;
             }
@@ -360,6 +416,10 @@ export default function PlansPage() {
                     <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#9ca3af", fontWeight: 500 }}>
                       Free forever — no credit card required
                     </p>
+                  ) : isOnPaidPlan ? (
+                    <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#9ca3af", fontWeight: 500 }}>
+                      Cancel or switch anytime
+                    </p>
                   ) : (
                     <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>
                       7-day free trial, then ${price}/mo{annual ? " (billed annually)" : ""}
@@ -368,15 +428,16 @@ export default function PlansPage() {
 
                   <button
                     onClick={() => handleSelect(plan)}
-                    disabled={isCurrent}
+                    disabled={isCurrent || isSubmitting}
                     style={{
                       marginTop: "14px",
                       width: "100%", padding: "9px 0",
                       borderRadius: "8px", border: "none",
-                      cursor: isCurrent ? "default" : "pointer",
+                      cursor: isCurrent || isSubmitting ? "default" : "pointer",
                       fontSize: "13px", fontWeight: 600,
                       background: isCurrent ? "#f3f4f6" : plan.popular ? plan.accentColor : "#111827",
                       color: isCurrent ? "#9ca3af" : "#ffffff",
+                      opacity: isSubmitting && !isCurrent ? 0.6 : 1,
                       transition: "opacity 0.15s",
                     }}
                   >
